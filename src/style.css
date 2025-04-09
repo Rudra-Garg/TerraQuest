@@ -1,0 +1,12 @@
+/* src/style.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add Leaflet's CSS */
+@import 'leaflet/dist/leaflet.css';
+
+/* Add any custom base styles here */
+body {
+  font-family: sans-serif; /* Example */
+}

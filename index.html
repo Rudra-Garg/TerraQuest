@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoGuessr Clone</title>
+    <!-- ADD THIS SCRIPT TAG -->
+    <script async
+      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&callback=initMap">
+    </script>
+    <!-- Make a dummy initMap function to prevent errors until Vue mounts -->
+    <script> function initMap() { console.log("Google Maps API loaded."); } </script>
+    <!-- END ADDED SCRIPT TAG -->
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
