@@ -1,170 +1,194 @@
 <template>
-  <div class="p-4 space-y-4 relative">
-    <!-- Loading Overlay -->
-    <div v-if="gameStore.isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-       <p class="text-xl font-semibold">Loading...</p>
+  <div class="relative w-screen h-screen overflow-hidden bg-black">
+
+    <!-- 1. Street View Background -->
+    <div class="absolute inset-0 z-0">
+      <StreetViewDisplay :location="gameStore.getCurrentLocation"
+        v-if="gameStore.gameId && !gameStore.isGameOver && gameStore.getCurrentLocation" class="w-full h-full" />
+
+      <div v-else-if="gameStore.gameId && !gameStore.isGameOver"
+        class="w-full h-full bg-gray-700 flex items-center justify-center">
+        <p class="text-gray-400 text-lg">Loading Location...</p>
+      </div>
     </div>
 
-    <!-- Start Game Button -->
-    <div v-if="!gameStore.gameId && !gameStore.isGameOver" class="text-center">
-       <button @click="startGameHandler" class="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 text-lg">
-           Start New Game
-       </button>
+    <!-- 2. Round Number (Top Center) -->
+    <div v-if="gameStore.gameId && !gameStore.isGameOver"
+      class="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-black/60 text-white px-4 py-1.5 rounded-full text-lg font-semibold shadow-lg">
+      Round {{ gameStore.currentRoundNumber }} / {{ gameStore.MAX_ROUNDS }}
     </div>
 
-    <!-- Game Content -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver">
-      <h1 class="text-2xl font-bold">Round {{ gameStore.currentRoundNumber }} / {{ gameStore.MAX_ROUNDS }}</h1>
+    <!-- 3. Map Overlay (Bottom Right - Expandable) -->
+    <div v-if="gameStore.gameId && !gameStore.isGameOver"
+      class="map-container group absolute z-20 bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 border-2 border-white/50 rounded-lg shadow-xl overflow-hidden transition-all duration-300 ease-in-out hover:w-[40vw] hover:h-[40vh] hover:border-white"
+      :class="{ 'pointer-events-none opacity-50': gameStore.hasSubmittedGuessForCurrentRound }">
+      <MapDisplay @guess-made="handleMapGuess" ref="mapDisplayRef" :round-active="gameStore.isRoundActive"
+        :submitted="gameStore.hasSubmittedGuessForCurrentRound"
+        :actual-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentLocation : null"
+        :guess-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentRoundResult?.guess : null"
+        class="w-full h-full cursor-pointer" />
 
-      <!-- Street View Display -->
-      <StreetViewDisplay :location="gameStore.getCurrentLocation" v-if="gameStore.getCurrentLocation"/>
-      <div v-else class="w-full h-[50vh] bg-gray-300 flex items-center justify-center">
-          Waiting for location...
+      <div
+        class="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none group-focus-within:opacity-0">
+        (Hover to enlarge)
+      </div>
+    </div>
+
+    <!-- 4. Controls & Info (Bottom Center) -->
+    <div v-if="gameStore.gameId && !gameStore.isGameOver"
+      class="controls-container absolute bottom-5 left-1/2 -translate-x-1/2 z-20 p-3 md:p-4 bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-lg shadow-lg flex flex-col items-center space-y-2">
+      <p v-if="gameStore.currentGuess && !gameStore.hasSubmittedGuessForCurrentRound"
+        class="text-xs text-gray-700 dark:text-gray-300">
+        Selected: {{ gameStore.currentGuess.lat.toFixed(3) }}, {{ gameStore.currentGuess.lng.toFixed(3) }}
+      </p>
+
+      <div class="flex justify-center space-x-3">
+        <button @click="submitGuessHandler"
+          :disabled="!gameStore.currentGuess || !gameStore.isRoundActive || gameStore.hasSubmittedGuessForCurrentRound"
+          class="px-4 py-2 md:px-5 bg-green-600 text-white rounded-md shadow hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-70 transition duration-150 ease-in-out font-medium">
+          {{ gameStore.hasSubmittedGuessForCurrentRound ? 'Guessed' : 'Guess' }}
+        </button>
+        <button v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.currentRoundNumber < gameStore.MAX_ROUNDS"
+          @click="nextRoundHandler"
+          class="px-4 py-2 md:px-5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition duration-150 ease-in-out font-medium">
+          Next Round →
+        </button>
+        <button
+          v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.currentRoundNumber === gameStore.MAX_ROUNDS"
+          @click="viewResultsHandler"
+          class="px-4 py-2 md:px-5 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition duration-150 ease-in-out font-medium">
+          Finish Game
+        </button>
       </div>
 
-      <!-- Map for Guessing -->
-      <!-- Add :key to force re-render/reset maybe? Or rely on resetMarker -->
-      <MapDisplay
-          @guess-made="handleMapGuess"
-          ref="mapDisplayRef"
-          :round-active="gameStore.isRoundActive"
-          :submitted="gameStore.hasSubmittedGuessForCurrentRound"
-          :actual-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentLocation : null"
-          :guess-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentRoundResult?.guess : null"
-      />
+      <div class="flex items-center justify-center space-x-4 pt-2 text-sm md:text-base">
+        <div v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.getCurrentRoundResult"
+          class="text-center border-r pr-4 border-gray-300 dark:border-gray-600">
+          <p class="text-xs text-gray-600 dark:text-gray-400">Round {{ gameStore.currentRoundNumber }} Score</p>
+          <p class="font-semibold text-gray-800 dark:text-gray-200">{{ gameStore.getCurrentRoundResult.score }} pts</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">({{ gameStore.getCurrentRoundResult.distanceKm.toFixed(0)
+            }} km)</p>
 
-      <!-- Guessing Controls -->
-      <div class="flex flex-col items-center space-y-2 mt-4">
-         <p v-if="gameStore.currentGuess && !gameStore.hasSubmittedGuessForCurrentRound">
-             Selected Guess: {{ gameStore.currentGuess.lat.toFixed(4) }}, {{ gameStore.currentGuess.lng.toFixed(4) }}
-         </p>
-         <div class="flex justify-center space-x-4">
-             <button
-               @click="submitGuessHandler"
-               :disabled="!gameStore.currentGuess || !gameStore.isRoundActive || gameStore.hasSubmittedGuessForCurrentRound"
-               class="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-             >
-               {{ gameStore.hasSubmittedGuessForCurrentRound ? 'Submitted' : 'Submit Guess' }}
-             </button>
-             <button
-                 v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.currentRoundNumber < gameStore.MAX_ROUNDS"
-                 @click="nextRoundHandler"
-                 class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-             >
-                 Next Round
-             </button>
-              <button
-                 v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.currentRoundNumber === gameStore.MAX_ROUNDS"
-                 @click="viewResultsHandler"
-                 class="px-6 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-             >
-                 View Final Results
-             </button>
-         </div>
+        </div>
+        <div class="text-center">
+          <p class="text-xs text-gray-600 dark:text-gray-400">Total Score</p>
+          <p class="font-semibold text-gray-800 dark:text-gray-200">{{ gameStore.totalScore }}</p>
+        </div>
       </div>
-
-       <!-- Round Result Display -->
-       <div v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.getCurrentRoundResult" class="mt-4 p-4 border rounded bg-gray-50">
-           <h3 class="font-semibold">Round {{ gameStore.currentRoundNumber }} Result</h3>
-           <p>Distance: {{ gameStore.getCurrentRoundResult.distanceKm.toFixed(2) }} km</p>
-           <p>Score: {{ gameStore.getCurrentRoundResult.score }} points</p>
-           <!-- MapDisplay will now show the markers/line based on props -->
-       </div>
-       <div class="mt-4 text-xl font-semibold text-center">Total Score: {{ gameStore.totalScore }}</div>
+    </div>
+    <div v-if="gameStore.gameError"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-lg text-center">
+      <p class="font-bold mb-2">Error</p>
+      <p>{{ gameStore.gameError }}</p>
+      <button @click="gameStore.clearGameError()"
+        class="mt-3 px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">
+        Dismiss
+      </button>
     </div>
 
-    <!-- Game Over Display -->
-     <div v-if="gameStore.isGameOver && gameStore.gameId" class="text-center p-6 border rounded bg-yellow-100">
-         <h2 class="text-3xl font-bold text-yellow-800 mb-4">Game Over!</h2>
-         <p class="text-xl mb-2">Your final score is:</p>
-         <p class="text-4xl font-bold mb-6">{{ gameStore.totalScore }}</p>
-         <button @click="startGameHandler" class="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 text-lg">
-           Play Again?
-         </button>
-          <!-- TODO: Link to detailed results/leaderboard -->
-     </div>
+    <!-- 5. Loading Overlay -->
+    <div v-if="gameStore.isLoading && !gameStore.isGameOver"
+      class="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <svg class="animate-spin h-8 w-8 text-white mr-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24">
+        {
+      </svg>
+      <p class="text-xl font-semibold text-white">Loading...</p>
+    </div>
 
+    <!-- 6. Start Game Button Screen (Before Game Starts) -->
+    <div v-if="!gameStore.gameId && !gameStore.isGameOver"
+      class="absolute inset-0 bg-gradient-to-br from-blue-900 to-purple-900 flex flex-col items-center justify-center z-40">
+      <h2 class="text-3xl font-bold text-white mb-6">Ready to Guess?</h2>
+      <button @click="startGameHandler" :disabled="!gameStore.isMapsApiReady"
+        class="px-8 py-4 bg-yellow-400 text-gray-900 rounded-lg shadow-lg hover:bg-yellow-300 text-xl font-semibold transition duration-150 ease-in-out disabled:bg-gray-500 disabled:cursor-not-allowed transform hover:scale-105">
+        {{ gameStore.isMapsApiReady ? 'Start New Game' : 'Initializing...' }}
+      </button>
+    </div>
+
+    <!-- 7. Game Over Screen -->
+    <div v-if="gameStore.isGameOver && gameStore.gameId"
+      class="absolute inset-0 bg-gradient-to-br from-green-800 to-teal-800 flex flex-col items-center justify-center text-center p-6 z-40">
+      <h2 class="text-5xl font-bold text-white mb-4 drop-shadow-lg">Game Over!</h2>
+      <p class="text-2xl text-yellow-200 mb-2">Your final score:</p>
+      <p class="text-6xl font-bold text-white mb-10 drop-shadow-md">{{ gameStore.totalScore }}</p>
+      <button @click="startGameHandler"
+        class="px-8 py-4 bg-yellow-400 text-gray-900 rounded-lg shadow-lg hover:bg-yellow-300 text-xl font-semibold transition duration-150 ease-in-out transform hover:scale-105">
+        Play Again?
+      </button>
+    </div>
+    <!-- Modify Start Game Button Screen for errors too -->
+    <div v-if="!gameStore.gameId && !gameStore.isGameOver"
+      class="absolute inset-0 bg-gradient-to-br from-blue-900 to-purple-900 flex flex-col items-center justify-center z-40">
+      <h2 class="text-3xl font-bold text-white mb-6">Ready to Guess?</h2>
+      <button @click="startGameHandler" :disabled="!gameStore.isMapsApiReady || gameStore.isLoading" 
+        class="px-8 py-4 bg-yellow-400 text-gray-900 rounded-lg shadow-lg hover:bg-yellow-300 text-xl font-semibold transition duration-150 ease-in-out disabled:bg-gray-500 disabled:cursor-not-allowed transform hover:scale-105">
+        {{ !gameStore.isMapsApiReady ? 'Initializing...' : (gameStore.isLoading ? 'Starting...' : 'Start New Game') }}
+      </button>
+      <p v-if="gameError && !gameStore.gameId" class="mt-4 text-red-300">{{ gameError }}</p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router'; // If needed for navigation
+import { useRouter } from 'vue-router';
 import StreetViewDisplay from '../components/StreetViewDisplay.vue';
 import MapDisplay from '../components/MapDisplay.vue';
-import { useGameStore } from '../stores/gameStore'; // Import the store
+import { useGameStore } from '../stores/gameStore';
 
 const gameStore = useGameStore();
-const router = useRouter(); // Optional, for navigation
-const mapDisplayRef = ref(null); // Ref to access MapDisplay methods
+const router = useRouter();
+const mapDisplayRef = ref(null);
 
-// --- Component Logic ---
-
-// Handler for starting the game (calls store action)
-function startGameHandler() {
-    gameStore.startGame();
-}
-
-// Handler for recording guess from map (calls store action)
-function handleMapGuess(coordinates) {
-    gameStore.recordGuess(coordinates);
-}
-
-// Handler for submitting guess (calls store action)
-function submitGuessHandler() {
-    gameStore.submitGuess();
-}
-
-// Handler for next round (calls store action)
+function startGameHandler() { gameStore.startGame(); }
+function handleMapGuess(coordinates) { gameStore.recordGuess(coordinates); }
+function submitGuessHandler() { gameStore.submitGuess(); }
 function nextRoundHandler() {
-    mapDisplayRef.value?.resetMapState(); // Call method on child to clear lines/markers
-    gameStore.nextRound();
+  mapDisplayRef.value?.resetMapState(); // Ensure map clears markers/lines/zoom
+  gameStore.nextRound();
 }
-
-// Handler for viewing final results (example)
 function viewResultsHandler() {
-    console.log("Navigating to results...");
-    gameStore.isGameOver = true; // Ensure game over state is set if clicking early
-    // router.push('/results/' + gameStore.gameId); // Example navigation
+  // For now, just shows the game over screen in place
+  gameStore.isGameOver = true;
+  console.log("Game finished. Final Score:", gameStore.totalScore);
 }
 
-
-// --- Watchers ---
-// Watch for the round change to potentially reset map state if needed
-// (Though reset is now explicitly called in nextRoundHandler)
-watch(() => gameStore.currentRoundNumber, (newRound, oldRound) => {
-    if (newRound > oldRound && mapDisplayRef.value) {
-         console.log(`GameView: Detected round change to ${newRound}. Map should reset.`);
-        // mapDisplayRef.value.resetMapState(); // Moved to nextRoundHandler for better timing
-    }
-});
-
- // Watch for the location changing to ensure StreetView updates
- watch(() => gameStore.getCurrentLocation, (newLocation) => {
-     if (newLocation) {
-         console.log("GameView: Location changed in store, StreetViewDisplay should update.");
-         // StreetViewDisplay component internally watches its prop
-     }
- });
-
-// --- Lifecycle Hooks ---
+// No changes needed to watchers or hooks for this layout change
+watch(() => gameStore.currentRoundNumber, (newRound, oldRound) => { /* ... */ });
+watch(() => gameStore.getCurrentLocation, (newLocation) => { /* ... */ });
 onMounted(() => {
-  // If navigating directly to /game, decide if we need to start a new game
-  // or perhaps load an existing game state (more advanced)
-  // For now, we require clicking "Start New Game"
-  console.log("GameView mounted. Current store state:", {
-      gameId: gameStore.gameId,
-      round: gameStore.currentRoundNumber,
-      isOver: gameStore.isGameOver
+  console.log("GameView mounted (Full Screen Layout). Current store state:", {
+    gameId: gameStore.gameId, round: gameStore.currentRoundNumber, isOver: gameStore.isGameOver
   });
-  // Optionally: If there's an active game in the store but no location, trigger nextRound?
-  // if (gameStore.gameId && !gameStore.getCurrentLocation && !gameStore.isGameOver) {
-  //    gameStore.nextRound(); // Might be needed if refreshing page mid-game later
-  // }
 });
-
 </script>
 
 <style scoped>
-/* Add any specific styles for GameView */
+/* Ensure MapDisplay's internal map fills its container */
+.map-container :deep(.leaflet-container) {
+  width: 100%;
+  height: 100%;
+}
+
+/* Optional: Add a subtle indicator for the map container */
+.map-container::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  /* Slightly outside border */
+  border-radius: 0.6rem;
+  /* Slightly larger than container's rounded-lg */
+  border: 2px dashed transparent;
+  transition: border-color 0.3s ease-in-out;
+  pointer-events: none;
+  /* Don't interfere with hover */
+}
+
+.map-container:hover::before {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Ensure StreetView fills its absolute container */
+/* StreetViewDisplay.vue should have w-full h-full on its root */
 </style>

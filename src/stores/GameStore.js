@@ -1,8 +1,7 @@
 // src/stores/gameStore.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-// Import your API service later when created
-// import gameService from '@/services/gameService';
+import gameService from '../services/gameService';
 
 // Helper function (can be moved to a utils file later)
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -30,36 +29,32 @@ function calculateScore(distanceKm) {
 
 export const useGameStore = defineStore('game', () => {
     // --- State ---
-    const gameId = ref(null); // ID from backend later
-    const currentRound = ref(0); // Start at 0, increment before loading
+    const isMapsApiReady = ref(false);
+    const gameId = ref(null);
+    const currentRound = ref(0);
     const totalScore = ref(0);
-    const locations = ref([]); // Holds the locations for the current game { id, lat, lng, ... }
-    const currentGuess = ref(null); // Player's guess { lat, lng }
-    const roundResults = ref([]); // Array to store results of each round { guess, actual, distanceKm, score }
-    const isRoundActive = ref(false); // Is a round currently playable?
+    const locations = ref([]); // Will hold locations from backend { id, lat, lng }
+    const currentGuess = ref(null);
+    const roundResults = ref([]);
+    const isRoundActive = ref(false);
     const isGameOver = ref(false);
-    const isLoading = ref(false); // For loading states (e.g., fetching location)
-
-    // Mock locations for now (replace with API call)
-    const MOCK_LOCATIONS = [
-        { id: 1, lat: 40.75798, lng: -73.9855, country: 'USA', region: 'New York' },
-        { id: 2, lat: 48.8584, lng: 2.2945, country: 'France', region: 'Paris' },
-        { id: 3, lat: -33.8568, lng: 151.2153, country: 'Australia', region: 'Sydney' },
-        { id: 4, lat: 35.6586, lng: 139.7454, country: 'Japan', region: 'Tokyo' },
-        { id: 5, lat: 51.5007, lng: -0.1246, country: 'UK', region: 'London' }
-    ];
-    const MAX_ROUNDS = 5;
-
-    // --- Getters (Computed) ---
+    const isLoading = ref(false);
+    const gameError = ref(null); 
+    const MAX_ROUNDS = 5; // Set a default number of rounds
     const currentRoundNumber = computed(() => currentRound.value);
     const getCurrentLocation = computed(() => {
         if (currentRound.value > 0 && currentRound.value <= locations.value.length) {
-            return locations.value[currentRound.value - 1];
+            const loc = locations.value[currentRound.value - 1];
+            // Return copy, ensure required fields exist
+            return { id: loc.id, lat: loc.lat, lng: loc.lng };
         }
         return null;
     });
+
+    // --- Getters (Computed) ---
+
     const getCurrentRoundResult = computed(() => {
-         if (currentRound.value > 0 && currentRound.value <= roundResults.value.length) {
+        if (currentRound.value > 0 && currentRound.value <= roundResults.value.length) {
             return roundResults.value[currentRound.value - 1];
         }
         return null;
@@ -71,33 +66,55 @@ export const useGameStore = defineStore('game', () => {
 
 
     // --- Actions ---
+    function setMapsApiReady(value) {
+        console.log(`Store: Setting Maps API Ready to ${value}`);
+        isMapsApiReady.value = value;
+    }
+
+    function clearGameError() { // Helper to clear error state
+        gameError.value = null;
+    }
+
     async function startGame() {
-        console.log("Starting new game...");
+        if (!isMapsApiReady.value) {
+            console.error("Attempted to start game before Maps API is ready!");
+            gameError.value = "Maps API is still loading. Please wait.";
+            return;
+        }
+
+        console.log("Store: Attempting to start game via API...");
         isLoading.value = true;
         isGameOver.value = false;
+        gameError.value = null; // Clear previous errors
         currentRound.value = 0;
         totalScore.value = 0;
         roundResults.value = [];
         currentGuess.value = null;
-        gameId.value = `mock_game_${Date.now()}`; // Mock game ID
+        locations.value = []; // Clear previous locations
+        gameId.value = null;
 
         try {
-            // TODO: Replace with API call to initialize game and get locations
-            // const gameData = await gameService.initializeGame();
-            // gameId.value = gameData.gameId;
-            // locations.value = gameData.locations;
+            // --- Call Backend API ---
+            const gameData = await gameService.startGame(MAX_ROUNDS);
+            // ------------------------
 
-            // Using mock data for now:
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-            locations.value = [...MOCK_LOCATIONS]; // Use a copy
+            // --- Process Response ---
+            if (!gameData || !gameData.locations || gameData.locations.length === 0) {
+                throw new Error("Received invalid game data from server.");
+            }
 
-            console.log("Game started, locations loaded:", locations.value);
-            await nextRound(); // Automatically start the first round
+            gameId.value = gameData.gameId; // Use gameId from backend (even if placeholder)
+            locations.value = gameData.locations; // Store fetched locations
+
+            console.log(`Store: Game ${gameId.value} started, ${locations.value.length} locations loaded from backend.`);
+            await nextRound(); // Start the first round
 
         } catch (error) {
-            console.error("Error starting game:", error);
-            // TODO: Handle error (e.g., show notification)
-            isGameOver.value = true; // Prevent further actions if setup fails
+            console.error("Store: Error starting game:", error.message);
+            gameError.value = "Failed to start new game. Please try again later."; // Set user-friendly error
+            isGameOver.value = true; // Set to game over state on error
+            locations.value = []; // Ensure locations are empty on error
+            gameId.value = null;
         } finally {
             isLoading.value = false;
         }
@@ -105,12 +122,10 @@ export const useGameStore = defineStore('game', () => {
 
     async function nextRound() {
         if (isGameOver.value) return;
-
-        if (currentRound.value >= MAX_ROUNDS) {
+        if (currentRound.value >= locations.value.length) { // Check against actual loaded locations count
             console.log("Game Over! Final Score:", totalScore.value);
             isGameOver.value = true;
             isRoundActive.value = false;
-            // TODO: Maybe call an API endpoint to finalize the game score
             return;
         }
 
@@ -143,8 +158,8 @@ export const useGameStore = defineStore('game', () => {
 
         const actualLocation = getCurrentLocation.value;
         if (!actualLocation) {
-             console.error("Cannot submit guess, actual location not found for round.");
-             return;
+            console.error("Cannot submit guess, actual location not found for round.");
+            return;
         }
 
         console.log("Store: Submitting guess", currentGuess.value, "for actual", actualLocation);
@@ -204,7 +219,9 @@ export const useGameStore = defineStore('game', () => {
         isGameOver,
         isLoading,
         MAX_ROUNDS,
-
+        isMapsApiReady,
+        gameError,
+        clearGameError,
         // Getters
         currentRoundNumber,
         getCurrentLocation,
@@ -216,5 +233,6 @@ export const useGameStore = defineStore('game', () => {
         nextRound,
         recordGuess,
         submitGuess,
+        setMapsApiReady,
     };
 });

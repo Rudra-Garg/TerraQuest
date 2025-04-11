@@ -1,12 +1,21 @@
 /* src/style.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-/* Add Leaflet's CSS */
+/* Import external CSS first (like Leaflet) */
 @import 'leaflet/dist/leaflet.css';
 
-/* Add any custom base styles here */
+/* Import Tailwind CSS - this replaces @tailwind base/components/utilities */
+@import 'tailwindcss';
+
+/* Add any custom base styles or @layer overrides below */
 body {
   font-family: sans-serif; /* Example */
+  /* You can still use @apply here if needed, but prefer utility classes in templates */
+  /* @apply bg-gray-100 text-gray-900; */
+}
+
+/* Example of adding custom utility */
+@layer utilities {
+  .custom-utility-example {
+    @apply text-blue-500 font-bold;
+  }
 }
