@@ -9,12 +9,7 @@ export default defineConfig({
     vue(),
     tailwindcss() // Correctly added plugin instance
   ],
-  // Optional: Add Autoprefixer if needed, though @tailwindcss/vite should handle it
-  // css: {
-  //   postcss: {
-  //     plugins: [autoprefixer()], // Usually not needed with @tailwindcss/vite
-  //   },
-  // },
+  base: '/', 
   build: {
     outDir: 'dist',
   }

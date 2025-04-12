@@ -1,8 +1,8 @@
 <!-- src/components/MapDisplay.vue -->
 <template>
-  <div ref="mapContainerRef" class="w-full h-[40vh] z-0 bg-gray-200">
-    <!-- Map renders here -->
-  </div>
+    <div ref="mapContainerRef" class="w-full h-full z-0 bg-gray-200">
+        <!-- Map renders here -->
+    </div>
 </template>
 
 <script setup>
@@ -37,20 +37,20 @@ let actualMarker = null;
 let resultLine = null;
 
 function initializeMap() {
-  if (!mapContainerRef.value || map) return; // Prevent re-init
+    if (!mapContainerRef.value || map) return; // Prevent re-init
 
-  map = L.map(mapContainerRef.value, {
-      // Prefer loading state over default view for cleaner look
-  }).setView([20, 0], 2);
+    map = L.map(mapContainerRef.value, {
+        // Prefer loading state over default view for cleaner look
+    }).setView([20, 0], 2);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    minZoom: 1, // Prevent zooming out too far
-    maxZoom: 18,
-  }).addTo(map);
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png?api_key=YOUR_API_KEY&language=en', {
 
-  // Click listener (only active when round is active)
-  map.on('click', handleMapClick);
+        minZoom: 1,
+        maxZoom: 10
+    }).addTo(map);
+
+    // Click listener (only active when round is active)
+    map.on('click', handleMapClick);
 }
 
 function handleMapClick(e) {
@@ -63,17 +63,17 @@ function handleMapClick(e) {
 }
 
 function updateGuessMarker(coordinates) {
-     if (!map) return;
-     if (!guessMarker) {
+    if (!map) return;
+    if (!guessMarker) {
         // Use a different color/icon for guess marker?
         guessMarker = L.marker(coordinates, { draggable: false }).addTo(map)
             .bindPopup("Your Guess");
-     } else {
+    } else {
         guessMarker.setLatLng(coordinates);
-     }
-     guessMarker.openPopup();
-     // Optional: Pan map to marker
-     // map.panTo(coordinates);
+    }
+    guessMarker.openPopup();
+    // Optional: Pan map to marker
+    // map.panTo(coordinates);
 }
 
 function showResults() {
@@ -83,11 +83,11 @@ function showResults() {
 
     // Ensure guess marker is at the final guess location
     updateGuessMarker(props.guessLocation);
-    if(guessMarker) guessMarker.closePopup(); // Close popup initially
+    if (guessMarker) guessMarker.closePopup(); // Close popup initially
 
     // Add actual location marker (different style)
     if (!actualMarker) {
-         const actualIcon = L.icon({ // Example custom icon
+        const actualIcon = L.icon({ // Example custom icon
             iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
             iconSize: [25, 41],
@@ -109,17 +109,28 @@ function showResults() {
             [props.actualLocation.lat, props.actualLocation.lng]
         ], { color: 'red', weight: 3 }).addTo(map);
     } else {
-         resultLine.setLatLngs([
+        resultLine.setLatLngs([
             [props.guessLocation.lat, props.guessLocation.lng],
             [props.actualLocation.lat, props.actualLocation.lng]
         ]);
     }
 
-    // Fit map view to show both markers
+    // Fit map view to show both markers with adequate padding and animation
     map.flyToBounds(L.latLngBounds([
-         [props.guessLocation.lat, props.guessLocation.lng],
-         [props.actualLocation.lat, props.actualLocation.lng]
-    ]), { padding: [50, 50] }); // Add padding
+        [props.guessLocation.lat, props.guessLocation.lng],
+        [props.actualLocation.lat, props.actualLocation.lng]
+    ]), {
+        padding: [100, 100],  // More padding for fullscreen view
+        duration: 1,          // Animation duration in seconds
+        easeLinearity: 0.5    // Smoother animation
+    });
+
+    // Force a map resize after a short delay to ensure it fills its container
+    setTimeout(() => {
+        if (map) {
+            map.invalidateSize();
+        }
+    }, 300);
 }
 
 function clearMapFeatures() {
@@ -141,11 +152,25 @@ function clearMapFeatures() {
 
 function resetMapState() {
     clearMapFeatures();
-    if(map) map.flyTo([20, 0], 2); // Reset view gently
+    if (map) map.flyTo([20, 0], 2); // Reset view gently
 }
 
 // Expose the reset function so parent can call it before next round
 defineExpose({ resetMapState });
+
+function handleResize() {
+    if (map) {
+        map.invalidateSize();
+
+        // If results are showing, refit bounds
+        if (props.submitted && props.actualLocation && props.guessLocation) {
+            map.fitBounds(L.latLngBounds([
+                [props.guessLocation.lat, props.guessLocation.lng],
+                [props.actualLocation.lat, props.actualLocation.lng]
+            ]), { padding: [100, 100] });
+        }
+    }
+}
 
 // --- Watchers ---
 watch(() => props.submitted, (isSubmitted) => {
@@ -167,22 +192,26 @@ watch(() => props.submitted, (isSubmitted) => {
 
 // --- Lifecycle ---
 onMounted(() => {
-  // Delay initialization slightly to ensure container is ready
-  // requestAnimationFrame or setTimeout can help sometimes
-  setTimeout(() => {
-      initializeMap();
-      // If component mounts into an already submitted state (e.g. page refresh mid-game)
-      if (props.submitted && props.actualLocation && props.guessLocation) {
-          showResults();
-      }
-  }, 50); // Short delay
+    // Delay initialization slightly to ensure container is ready
+    // requestAnimationFrame or setTimeout can help sometimes
+    setTimeout(() => {
+        initializeMap();
+        // If component mounts into an already submitted state (e.g. page refresh mid-game)
+        if (props.submitted && props.actualLocation && props.guessLocation) {
+            showResults();
+        }
+
+        // Add resize event listener to ensure map fills container after size changes
+        window.addEventListener('resize', handleResize);
+    }, 50); // Short delay
 });
 
 onBeforeUnmount(() => {
-  if (map) {
-    map.remove();
-    map = null;
-  }
+    window.removeEventListener('resize', handleResize);
+    if (map) {
+        map.remove();
+        map = null;
+    }
 });
 
 </script>
@@ -192,11 +221,15 @@ onBeforeUnmount(() => {
 /* @import 'leaflet/dist/leaflet.css'; */
 
 .leaflet-container {
-   height: 40vh;
-   width: 100%;
-   background-color: #e5e7eb; /* Tailwind gray-200 */
+    height: 100%;
+    width: 100%;
+    background-color: #e5e7eb;
+    /* Tailwind gray-200 */
 }
-.leaflet-control-attribution a { /* Improve readability */
-    color: #374151; /* Tailwind gray-700 */
+
+.leaflet-control-attribution a {
+    /* Improve readability */
+    color: #374151;
+    /* Tailwind gray-700 */
 }
 </style>

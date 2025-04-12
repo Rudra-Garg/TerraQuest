@@ -1,10 +1,11 @@
 // src/services/authService.js
 import axios from 'axios';
 
-// You might want a shared Axios instance setup in another file (e.g., api.js)
-// For now, we create one here. Ensure baseURL matches your backend.
+
+const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
+
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8080/api/v1/auth', // Base URL specific to auth routes
+    baseURL: `${baseUrl}/api/v1/auth`,
     headers: {
         'Content-Type': 'application/json',
     },

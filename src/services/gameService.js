@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore'; // Adjust the import path as needed
+
+const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 // Create an Axios instance
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api/v1', // Your Go backend address + API prefix
+  baseURL: `${baseUrl}/api/v1`, // Your Go backend address + API prefix
   headers: {
     'Content-Type': 'application/json',
     // Add other default headers if needed, like Authorization later
