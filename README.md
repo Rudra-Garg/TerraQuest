@@ -1,109 +1,78 @@
-# TerraQuest Frontend
 
-A modern geography guessing game built with Vue 3, Tailwind CSS, and WebSocket support for real-time multiplayer gameplay.
+# TerraQuest 🌍
 
-## Features
+A modern, interactive geography guessing game built with Vue 3 and Google Street View. Test your geography knowledge by exploring locations worldwide and pinpointing them on a map.
 
-- 🌍 Single-player geography guessing game
-- 👥 Real-time multiplayer support
-- 🗺️ Interactive map with guess placement
-- 🌐 Google Street View integration
-- 📊 Score tracking and round management
-- 🔒 User authentication and account management
-- 🎮 Real-time game state synchronization
-- 📱 Responsive design for all devices
+## 🌟 Features
 
-## Prerequisites
+- **Interactive Street View Experience**: Explore real-world locations using Google Street View
+- **Real-time Map Interaction**: Place your guesses on an interactive map
+- **Score System**: Earn points based on the accuracy of your guesses
+- **User Authentication**: Create an account to track your progress and compete with others
+- **Leaderboard System**: Compare your skills with other players worldwide
+- **Responsive Design**: Seamless experience across all devices
 
-- Node.js (v20 or later)
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
 - npm or yarn
-- A valid Google Maps API key
-- Backend server running (see backend repository)
+- Google Maps API Key
 
-## Installation
+### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd geoguessr
-```
+git clone https://github.com/Rudra-Garg/TerraQuest.git
+cd TerraQuest
+ ```
+
 
 2. Install dependencies:
 ```bash
 npm install
-```
+ ```
 
-3. Create a `.env` file in the root directory:
-```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-VITE_BACKEND_URL=http://localhost:8080
-```
+3. Create a .env file in the root directory with your Google Maps API key:
+```plaintext
+VITE_GOOGLE_MAPS_API_KEY=your_api_key_here
+VITE_BACKEND_URL=your_backend_url_here
+ ```
 
-## Development
 
-Start the development server:
+4. Start the development server:
 ```bash
 npm run dev
-```
+ ```
 
-The application will be available at `http://localhost:5173`
+## 🛠️ Built With
+- Vue 3 - Progressive JavaScript Framework
+- Vite - Next Generation Frontend Tooling
+- Pinia - State Management
+- Tailwind CSS - Utility-first CSS Framework
+- Leaflet - Interactive Maps
+- Google Maps API - Street View Integration
+## 🎮 How to Play
+1. Start a Game : Click "Play Now" to begin a new game session
+2. Explore : Use Street View to look around your random location
+3. Make Your Guess : Click on the map to place your guess
+4. Submit : Confirm your guess to see how close you were
+5. Continue : Play through multiple rounds to maximize your score
+## 🔧 Project Structure
+```plaintext
+src/
+├── components/     # Reusable Vue components
+├── views/          # Page components
+├── stores/         # Pinia state management
+├── services/       # API services
+├── router/         # Vue Router configuration
+└── assets/         # Static assets
+ ```
 
-## Building for Production
 
-```bash
-npm run build
-```
 
-The built files will be in the `dist` directory.
-
-## Project Structure
-
-- `src/`
-  - `assets/` - Static assets
-  - `components/` - Vue components
-  - `router/` - Vue Router configuration
-  - `services/` - API and WebSocket services
-  - `stores/` - Pinia stores for state management
-  - `views/` - Page components
-  - `App.vue` - Root component
-  - `main.js` - Application entry point
-  - `style.css` - Global styles
-
-## Key Components
-
-- `GameView.vue` - Main game interface
-- `StreetViewDisplay.vue` - Google Street View integration
-- `MapDisplay.vue` - Interactive map for guess placement
-- `MultiplayerLobby.vue` - Multiplayer game creation/joining
-
-## State Management
-
-The application uses Pinia for state management with these main stores:
-- `GameStore` - Game state and logic
-- `AuthStore` - User authentication state
-
-## WebSocket Integration
-
-Real-time multiplayer features are implemented using WebSocket:
-- Player synchronization
-- Live game state updates
-- Real-time guess submission and scoring
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| VITE_GOOGLE_MAPS_API_KEY | Google Maps API key for Street View |
-| VITE_BACKEND_URL | URL of the backend API server |
-
-## License
-
-[License Type] - See LICENSE file for details
+## 🙏 Acknowledgments
+- Google Maps Platform for Street View API
+- OpenStreetMap contributors
+- The Vue.js team and community
