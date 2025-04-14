@@ -65,7 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
         clearError();
         try {
             const response = await authService.login(credentials);
-            console.log('Login Response:', response);
+            // console.log('Login Response:', response);
             if (!response.token || !response.user) {
                 throw new Error("Invalid response from server during login.");
             }

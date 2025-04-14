@@ -79,7 +79,7 @@ function updateGuessMarker(coordinates) {
 function showResults() {
     if (!map || !props.actualLocation || !props.guessLocation) return;
 
-    console.log("MapDisplay: Showing results", props.guessLocation, props.actualLocation);
+    // console.log("MapDisplay: Showing results", props.guessLocation, props.actualLocation);
 
     // Ensure guess marker is at the final guess location
     updateGuessMarker(props.guessLocation);
@@ -134,7 +134,7 @@ function showResults() {
 }
 
 function clearMapFeatures() {
-    console.log("MapDisplay: Clearing markers and lines.");
+    // console.log("MapDisplay: Clearing markers and lines.");
     if (!map) return;
     if (guessMarker) {
         map.removeLayer(guessMarker);

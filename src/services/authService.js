@@ -1,7 +1,6 @@
 // src/services/authService.js
 import axios from 'axios';
 
-
 const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const apiClient = axios.create({
@@ -9,6 +8,9 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    // Add CORS configuration
+    withCredentials: true,
+    credentials: 'include'
 });
 
 // Optional: Add interceptors similar to gameService if needed (e.g., for logging)

@@ -1,15 +1,16 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/AuthStore'; // Adjust the import path as needed
+import { useAuthStore } from '../stores/AuthStore';
 
 const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
-// Create an Axios instance
+
 const apiClient = axios.create({
-  baseURL: `${baseUrl}/api/v1`, // Your Go backend address + API prefix
+  baseURL: `${baseUrl}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
-    // Add other default headers if needed, like Authorization later
   },
-  // timeout: 5000, // Optional: Set a timeout for requests
+  // Add CORS configuration
+  withCredentials: true,
+  credentials: 'include'
 });
 
 // Interceptors (Optional but useful for centralized logging/error handling)

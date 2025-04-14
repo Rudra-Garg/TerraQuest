@@ -35,11 +35,11 @@ async function setupStreetView() {
     isLoading.value = true;
     loadError.value = false;
     initAttempts = 0;
-    console.log("StreetView: Attempting setup for", props.location);
+    // console.log("StreetView: Attempting setup for", props.location);
 
     // 1. Wait for DOM element and valid location prop
     if (!panoRef.value || !props.location || typeof props.location.lat !== 'number') {
-        console.warn("StreetView: Setup aborted - Container or location invalid.", { el: !!panoRef.value, loc: props.location });
+        // console.warn("StreetView: Setup aborted - Container or location invalid.", { el: !!panoRef.value, loc: props.location });
         isLoading.value = false;
         // Don't set loadError yet, might just be waiting for props
         return;
@@ -47,7 +47,7 @@ async function setupStreetView() {
 
     // 2. Wait for Google Maps API (with retry)
     if (!(await ensureMapsApiReady(100))) { // Wait up to 100ms initially
-        console.error("StreetView: Google Maps API did not become ready.");
+        // console.error("StreetView: Google Maps API did not become ready.");
         isLoading.value = false;
         loadError.value = true; // Set error if API never loads
         return;
@@ -67,7 +67,7 @@ async function setupStreetView() {
 
 function handlePanoramaCheckResult(data, status) {
     if (status === google.maps.StreetViewStatus.OK) {
-        console.log("StreetView: Panorama found via Service. Proceeding to display.");
+        // // console.log("StreetView: Panorama found via Service. Proceeding to display.");
         displayPanorama(data.location.pano); // Pass Pano ID
     } else {
         console.error(`StreetView: Panorama check failed for location ${JSON.stringify(props.location)} - Status: ${status}`);
@@ -88,7 +88,7 @@ function displayPanorama(panoId) {
 
      if (!panorama) {
         // Create panorama instance ONLY if it doesn't exist
-        console.log("StreetView: Creating new Panorama instance.");
+        // console.log("StreetView: Creating new Panorama instance.");
         panorama = new google.maps.StreetViewPanorama(
             panoRef.value, {
                 pov: { heading: 34, pitch: 10 }, // Default starting view
@@ -112,7 +112,7 @@ function displayPanorama(panoId) {
      }
 
     // Set the specific panorama
-    console.log(`StreetView: Setting pano ID: ${panoId}`);
+    // console.log(`StreetView: Setting pano ID: ${panoId}`);
     panorama.setPano(panoId);
     // Set POV *after* setting pano might be more reliable
     panorama.setPov({ heading: 34, pitch: 10 });
@@ -152,20 +152,20 @@ function setupResizeObserver() {
         }
     });
     observer.observe(panoRef.value);
-    console.log("StreetView: Resize observer attached.");
+    // console.log("StreetView: Resize observer attached.");
 }
 
 function disconnectObserver() {
      if (observer && panoRef.value) {
         observer.unobserve(panoRef.value);
-        console.log("StreetView: Resize observer detached.");
+        // console.log("StreetView: Resize observer detached.");
      }
      observer = null;
 }
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
-  console.log("StreetView: Mounted.");
+  // console.log("StreetView: Mounted.");
   // Wait briefly for component to settle and API script loading (started in App.vue) to potentially complete
   await nextTick(); // Wait for Vue's next DOM update cycle
   // Don't initialize immediately, wait for the location prop watch to trigger the first setup
@@ -173,7 +173,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  console.log("StreetView: Unmounted.");
+  // console.log("StreetView: Unmounted.");
   disconnectObserver();
   // Clean up panorama instance? Should be garbage collected, but can be explicit:
   if (panorama && panorama.setVisible) {
@@ -189,13 +189,13 @@ watch(() => props.location, async (newLocation, oldLocation) => {
     await nextTick();
 
     if (newLocation && (!oldLocation || newLocation.lat !== oldLocation.lat || newLocation.lng !== oldLocation.lng)) {
-        console.log("StreetView: Location prop changed.", { new: newLocation });
+        // console.log("StreetView: Location prop changed.", { new: newLocation });
         // Always attempt a fresh setup when location fundamentally changes
         await setupStreetView();
 
     } else if (!newLocation && panorama) {
         // If location becomes null, hide the panorama
-        console.log("StreetView: Location became null, hiding panorama.");
+        // console.log("StreetView: Location became null, hiding panorama.");
         isLoading.value = false;
         loadError.value = false;
         panorama.setVisible(false);
