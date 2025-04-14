@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     tailwindcss()
   ],
-  base: process.env.NODE_ENV === 'production' ? '/TerraQuest/' : '/', // Update base URL for GitHub Pages
+  base: '/TerraQuest/',
   build: {
     outDir: 'dist',
   }
