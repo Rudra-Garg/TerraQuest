@@ -43,10 +43,11 @@ function initializeMap() {
         // Prefer loading state over default view for cleaner look
     }).setView([20, 0], 2);
 
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png?api_key=YOUR_API_KEY&language=en', {
-
-        minZoom: 1,
-        maxZoom: 10
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 10,
+        minZoom: 1
     }).addTo(map);
 
     // Click listener (only active when round is active)

@@ -3,10 +3,10 @@
 
     <!-- 1. Street View Background -->
     <div class="absolute inset-0 z-0">
-      <StreetViewDisplay :location="gameStore.getCurrentLocation"
-        v-if="gameStore.gameId && !gameStore.isGameOver && gameStore.getCurrentLocation" class="w-full h-full" />
+      <StreetViewDisplay :location="GameStore.getCurrentLocation"
+        v-if="GameStore.gameId && !GameStore.isGameOver && GameStore.getCurrentLocation" class="w-full h-full" />
 
-      <div v-else-if="gameStore.gameId && !gameStore.isGameOver"
+      <div v-else-if="GameStore.gameId && !GameStore.isGameOver"
         class="w-full h-full bg-gray-800 flex items-center justify-center">
         <div class="flex flex-col items-center">
           <svg class="animate-spin h-12 w-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -22,22 +22,22 @@
     </div>
 
     <!-- 2. Game Overlay UI (Static Elements) -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen"
+    <div v-if="GameStore.gameId && !GameStore.isGameOver && !isMapFullscreen"
       class="absolute top-0 left-0 right-0 z-10 pointer-events-none">
       <!-- Top Bar with Game Info -->
       <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/90 to-transparent">
         <div class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto">
           <div class="text-yellow-400 text-sm font-medium">TOTAL SCORE</div>
-          <div class="text-white text-xl font-bold">{{ gameStore.totalScore }}</div>
+          <div class="text-white text-xl font-bold">{{ GameStore.totalScore }}</div>
         </div>
 
         <div class="flex space-x-2 items-center">
           <!-- Round Indicator -->
           <div class="flex space-x-1">
-            <div v-for="round in gameStore.MAX_ROUNDS" :key="round" :class="[
+            <div v-for="round in GameStore.MAX_ROUNDS" :key="round" :class="[
               'w-6 h-6 rounded-full flex items-center justify-center border-2',
-              round < gameStore.currentRoundNumber ? 'bg-green-500 border-green-400' :
-                round === gameStore.currentRoundNumber ? 'bg-blue-600 border-blue-500 animate-pulse' :
+              round < GameStore.currentRoundNumber ? 'bg-green-500 border-green-400' :
+                round === GameStore.currentRoundNumber ? 'bg-blue-600 border-blue-500 animate-pulse' :
                   'bg-gray-700/70 border-gray-600'
             ]">
               <span class="text-xs font-bold text-white">{{ round }}</span>
@@ -64,44 +64,44 @@
     </div>
 
     <!-- 3. Map Overlay (Bottom Right - Expandable) -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver"
+    <div v-if="GameStore.gameId && !GameStore.isGameOver"
       class="map-container group absolute transition-all duration-300 ease-in-out border-2 overflow-hidden" :class="{
-        'inset-0 z-40 border-none': isMapFullscreen || gameStore.hasSubmittedGuessForCurrentRound,
-        'bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 z-20 border-white/50 rounded-lg shadow-lg hover:w-[40vw] hover:h-[40vh] hover:border-white': !isMapFullscreen && !gameStore.hasSubmittedGuessForCurrentRound
+        'inset-0 z-40 border-none': isMapFullscreen || GameStore.hasSubmittedGuessForCurrentRound,
+        'bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 z-20 border-white/50 rounded-lg shadow-lg hover:w-[40vw] hover:h-[40vh] hover:border-white': !isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound
       }">
-      <MapDisplay @guess-made="handleMapGuess" ref="mapDisplayRef" :round-active="gameStore.isRoundActive"
-        :submitted="gameStore.hasSubmittedGuessForCurrentRound"
-        :actual-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentLocation : null"
-        :guess-location="gameStore.hasSubmittedGuessForCurrentRound ? gameStore.getCurrentRoundResult?.guess : null"
+      <MapDisplay @guess-made="handleMapGuess" ref="mapDisplayRef" :round-active="GameStore.isRoundActive"
+        :submitted="GameStore.hasSubmittedGuessForCurrentRound"
+        :actual-location="GameStore.hasSubmittedGuessForCurrentRound ? GameStore.getCurrentLocation : null"
+        :guess-location="GameStore.hasSubmittedGuessForCurrentRound ? GameStore.getCurrentRoundResult?.guess : null"
         class="w-full h-full cursor-pointer" />
 
       <!-- Show hint only when map is NOT enlarged and not yet submitted -->
-      <div v-if="!isMapFullscreen && !gameStore.hasSubmittedGuessForCurrentRound"
+      <div v-if="!isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound"
         class="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none group-focus-within:opacity-0">
         <span class="bg-black/80 px-2 py-1 rounded">Hover to enlarge</span>
       </div>
 
       <!-- Result overlay visible only after guess submission -->
-      <div v-if="gameStore.hasSubmittedGuessForCurrentRound && gameStore.getCurrentRoundResult"
+      <div v-if="GameStore.hasSubmittedGuessForCurrentRound && GameStore.getCurrentRoundResult"
         class="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg text-sm max-w-xs shadow-lg">
         <div class="flex items-center mb-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <h3 class="font-bold text-lg">Round {{ gameStore.currentRoundNumber }} Result</h3>
+          <h3 class="font-bold text-lg">Round {{ GameStore.currentRoundNumber }} Result</h3>
         </div>
 
         <div class="space-y-3">
           <div>
             <p class="text-gray-300 text-xs uppercase tracking-wide font-medium mb-1">Distance</p>
-            <p class="font-semibold text-yellow-300 text-2xl">{{ gameStore.getCurrentRoundResult.distanceKm.toFixed(1)
+            <p class="font-semibold text-yellow-300 text-2xl">{{ GameStore.getCurrentRoundResult.distanceKm.toFixed(1)
             }} <span class="text-sm">km</span></p>
           </div>
 
           <div>
             <p class="text-gray-300 text-xs uppercase tracking-wide font-medium mb-1">Score</p>
-            <p class="font-semibold text-green-300 text-2xl">{{ gameStore.getCurrentRoundResult.score }} <span
+            <p class="font-semibold text-green-300 text-2xl">{{ GameStore.getCurrentRoundResult.score }} <span
                 class="text-sm">pts</span></p>
           </div>
         </div>
@@ -109,15 +109,15 @@
         <!-- Total score -->
         <div class="pt-3 mt-3 border-t border-gray-700">
           <p class="text-xs uppercase tracking-wide font-medium text-gray-300 mb-1">Total Score</p>
-          <p class="font-bold text-2xl text-white">{{ gameStore.totalScore }} <span class="text-sm">pts</span></p>
+          <p class="font-bold text-2xl text-white">{{ GameStore.totalScore }} <span class="text-sm">pts</span></p>
         </div>
       </div>
 
       <!-- Fullscreen navigation controls after submission -->
-      <div v-if="gameStore.hasSubmittedGuessForCurrentRound"
+      <div v-if="GameStore.hasSubmittedGuessForCurrentRound"
         class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4">
         <!-- Next round button -->
-        <button v-if="gameStore.currentRoundNumber < gameStore.MAX_ROUNDS" @click="nextRoundHandler"
+        <button v-if="GameStore.currentRoundNumber < GameStore.MAX_ROUNDS" @click="nextRoundHandler"
           class="px-6 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg shadow-lg hover:bg-blue-700 transition-all flex items-center">
           Next Round
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24"
@@ -137,7 +137,7 @@
       </div>
 
       <!-- Close map button when expanded -->
-      <button v-if="gameStore.hasSubmittedGuessForCurrentRound" @click="isMapFullscreen = false"
+      <button v-if="GameStore.hasSubmittedGuessForCurrentRound" @click="isMapFullscreen = false"
         class="absolute top-4 right-4 bg-gray-800/80 hover:bg-gray-700 text-white p-2 rounded-full shadow-lg transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -147,17 +147,17 @@
 
     <!-- 4. Controls & Info (Bottom Center) -->
     <div
-      v-if="gameStore.gameId && !gameStore.isGameOver && !(gameStore.hasSubmittedGuessForCurrentRound && isMapFullscreen)"
+      v-if="GameStore.gameId && !GameStore.isGameOver && !(GameStore.hasSubmittedGuessForCurrentRound && isMapFullscreen)"
       class="controls-container absolute bottom-5 left-1/2 -translate-x-1/2 z-20 p-3 md:p-4 bg-black/80 backdrop-blur-md rounded-xl shadow-lg flex flex-col items-center space-y-2 border border-gray-700">
-      <p v-if="gameStore.currentGuess && !gameStore.hasSubmittedGuessForCurrentRound" class="text-xs text-gray-300">
-        Selected: {{ gameStore.currentGuess.lat.toFixed(3) }}°, {{ gameStore.currentGuess.lng.toFixed(3) }}°
+      <p v-if="GameStore.currentGuess && !GameStore.hasSubmittedGuessForCurrentRound" class="text-xs text-gray-300">
+        Selected: {{ GameStore.currentGuess.lat.toFixed(3) }}°, {{ GameStore.currentGuess.lng.toFixed(3) }}°
       </p>
 
       <div class="flex justify-center space-x-3">
         <button @click="submitGuessHandler"
-          :disabled="!gameStore.currentGuess || !gameStore.isRoundActive || gameStore.hasSubmittedGuessForCurrentRound"
+          :disabled="!GameStore.currentGuess || !GameStore.isRoundActive || GameStore.hasSubmittedGuessForCurrentRound"
           class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg shadow-lg hover:from-green-700 hover:to-green-600 disabled:from-gray-500 disabled:to-gray-400 disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-150 ease-in-out font-medium flex items-center">
-          <svg v-if="!gameStore.currentGuess" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+          <svg v-if="!GameStore.currentGuess" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
             viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
@@ -173,7 +173,7 @@
     </div>
 
     <!-- Error Message -->
-    <div v-if="gameStore.gameError"
+    <div v-if="GameStore.gameError"
       class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-lg shadow-xl text-center max-w-md">
       <div class="flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24"
@@ -183,17 +183,17 @@
         </svg>
         <div>
           <p class="font-bold mb-1">Oops! Something went wrong</p>
-          <p>{{ gameStore.gameError }}</p>
+          <p>{{ GameStore.gameError }}</p>
         </div>
       </div>
-      <button @click="gameStore.clearGameError()"
+      <button @click="GameStore.clearGameError()"
         class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors">
         Dismiss
       </button>
     </div>
 
     <!-- 5. Loading Overlay -->
-    <div v-if="gameStore.isLoading && !gameStore.isGameOver"
+    <div v-if="GameStore.isLoading && !GameStore.isGameOver"
       class="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center z-50">
       <svg class="animate-spin h-16 w-16 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
         viewBox="0 0 24 24">
@@ -207,7 +207,7 @@
     </div>
 
     <!-- 6. Start Game Screen (Before Game Starts) -->
-    <div v-if="!gameStore.gameId && !gameStore.isGameOver"
+    <div v-if="!GameStore.gameId && !GameStore.isGameOver"
       class="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 flex flex-col items-center justify-center z-40 bg-[url('/path/to/world-map-bg.png')] bg-cover bg-center">
       <div class="bg-black/50 backdrop-blur-sm p-8 rounded-2xl text-center max-w-lg shadow-2xl border border-white/20">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-yellow-400 mx-auto mb-6" fill="none"
@@ -218,9 +218,9 @@
         <h2 class="text-4xl font-bold text-white mb-3">TerraQuest Challenge</h2>
         <p class="text-lg text-blue-100 mb-8">Get ready to test your geography knowledge with 5 challenging locations
           from around the world!</p>
-        <button @click="startGameHandler" :disabled="!gameStore.isMapsApiReady || gameStore.isLoading"
+        <button @click="startGameHandler" :disabled="!GameStore.isMapsApiReady || GameStore.isLoading"
           class="px-8 py-4 bg-gradient-to-r from-yellow-500 to-yellow-400 text-gray-900 rounded-lg shadow-lg hover:from-yellow-400 hover:to-yellow-300 text-xl font-semibold transition-all duration-300 ease-in-out disabled:from-gray-500 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center w-full">
-          <svg v-if="!gameStore.isMapsApiReady || gameStore.isLoading"
+          <svg v-if="!GameStore.isMapsApiReady || GameStore.isLoading"
             class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -228,7 +228,7 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
             </path>
           </svg>
-          {{ !gameStore.isMapsApiReady ? "Initializing Maps..." : (GameStore.isLoading ? "Starting Game..." : "Start Adventure") }}
+          {{ !GameStore.isMapsApiReady ? "Initializing Maps..." : (GameStore.isLoading ? "Starting Game..." : "Start Adventure") }}
         </button>
         <div class="flex items-center justify-center mt-6">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-300 mr-2" fill="none" viewBox="0 0 24 24"
@@ -238,12 +238,12 @@
           </svg>
           <p class="text-sm text-blue-300">You'll have 5 rounds to guess different locations</p>
         </div>
-        <p v-if="gameError && !gameStore.gameId" class="mt-4 text-red-300 bg-red-900/30 p-2 rounded">{{ gameError }}</p>
+        <p v-if="gameError && !GameStore.gameId" class="mt-4 text-red-300 bg-red-900/30 p-2 rounded">{{ gameError }}</p>
       </div>
     </div>
 
     <!-- 7. Game Over Screen -->
-    <div v-if="gameStore.isGameOver && gameStore.gameId"
+    <div v-if="GameStore.isGameOver && GameStore.gameId"
       class="absolute inset-0 bg-gradient-to-br from-green-800 via-blue-900 to-indigo-900 flex flex-col items-center justify-center text-center p-6 z-40">
       <div class="bg-black/30 backdrop-blur-sm p-8 rounded-2xl max-w-xl w-full border border-white/20 shadow-2xl">
         <div class="flex justify-center mb-6">
@@ -271,17 +271,17 @@
           <div class="flex justify-center mb-3">
             <div class="px-6 py-3 bg-yellow-400/20 rounded-full">
               <p class="text-yellow-300 font-bold">FINAL SCORE</p>
-              <p class="text-6xl font-bold text-white">{{ gameStore.totalScore }}</p>
+              <p class="text-6xl font-bold text-white">{{ GameStore.totalScore }}</p>
             </div>
           </div>
 
           <!-- Round Results Summary (could be expanded) -->
           <div class="grid grid-cols-5 gap-2 mt-6">
-            <div v-for="round in gameStore.MAX_ROUNDS" :key="round"
+            <div v-for="round in GameStore.MAX_ROUNDS" :key="round"
               class="flex flex-col items-center bg-white/10 p-2 rounded">
               <span class="text-xs text-white/70">Round {{ round }}</span>
-              <span class="text-sm font-semibold text-white" v-if="gameStore.roundResults[round - 1]">
-                {{ gameStore.roundResults[round - 1].score }}
+              <span class="text-sm font-semibold text-white" v-if="GameStore.roundResults[round - 1]">
+                {{ GameStore.roundResults[round - 1].score }}
               </span>
               <span v-else class="text-sm text-white/50">-</span>
             </div>
@@ -320,22 +320,26 @@ import StreetViewDisplay from '../components/StreetViewDisplay.vue';
 import MapDisplay from '../components/MapDisplay.vue';
 import { useGameStore } from '../stores/GameStore';
 
-const gameStore = useGameStore();
+const GameStore = useGameStore();
 const router = useRouter();
 const mapDisplayRef = ref(null);
 const isMapFullscreen = ref(false); // Renamed for clarity
 const gameError = ref(null);
 
 function startGameHandler() {
-  gameStore.startGame();
+  isMapFullscreen.value = false; // Reset map fullscreen state
+  if (mapDisplayRef.value) {
+    mapDisplayRef.value.resetMapState(); // Reset map markers and zoom
+  }
+  GameStore.startGame();
 }
 
 function handleMapGuess(coordinates) {
-  gameStore.recordGuess(coordinates);
+  GameStore.recordGuess(coordinates);
 }
 
 function submitGuessHandler() {
-  gameStore.submitGuess();
+  GameStore.submitGuess();
   // Automatically enlarge the map when submitting a guess
   isMapFullscreen.value = true;
 }
@@ -343,13 +347,13 @@ function submitGuessHandler() {
 function nextRoundHandler() {
   mapDisplayRef.value?.resetMapState(); // Ensure map clears markers/lines/zoom
   isMapFullscreen.value = false; // Reset map size for next round
-  gameStore.nextRound();
+  GameStore.nextRound();
 }
 
 function viewResultsHandler() {
   // For now, just shows the game over screen in place
-  gameStore.isGameOver = true;
-  console.log("Game finished. Final Score:", gameStore.totalScore);
+  GameStore.isGameOver = true;
+  console.log("Game finished. Final Score:", GameStore.totalScore);
 }
 
 function shareResults() {
@@ -357,19 +361,19 @@ function shareResults() {
   alert("Share feature coming soon!");
 }
 
-watch(() => gameStore.currentRoundNumber, (newRound, oldRound) => {
+watch(() => GameStore.currentRoundNumber, (newRound, oldRound) => {
   // Any special round transition animations could be triggered here
 });
 
-watch(() => gameStore.getCurrentLocation, (newLocation) => {
+watch(() => GameStore.getCurrentLocation, (newLocation) => {
   // Any location-specific handling can be done here
 });
 
 onMounted(() => {
   console.log("GameView mounted (Full Screen Layout). Current store state:", {
-    gameId: gameStore.gameId,
-    round: gameStore.currentRoundNumber,
-    isOver: gameStore.isGameOver
+    gameId: GameStore.gameId,
+    round: GameStore.currentRoundNumber,
+    isOver: GameStore.isGameOver
   });
 });
 </script>
