@@ -70,7 +70,7 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useGameStore } from './stores/GameStore'; // Import the store
-import { useAuthStore } from './stores/authStore'; // Import the auth store
+import { useAuthStore } from './stores/AuthStore'; // Import the auth store
 import { useRouter } from 'vue-router';
 
 const gameStore = useGameStore(); // Get store instance
