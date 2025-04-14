@@ -121,7 +121,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../stores/AuthStore';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
@@ -157,16 +157,16 @@ const handleRegister = async () => {
             'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
         notification.innerHTML = `
         <div class="flex">
-          <div class="flex-shrink-0">
+            <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
             </svg>
-          </div>
-          <div class="ml-3">
+            </div>
+            <div class="ml-3">
             <p class="text-sm">Registration successful! Please log in.</p>
-          </div>
+            </div>
         </div>
-      `;
+        `;
         document.body.appendChild(notification);
 
         // Remove notification after 3 seconds and redirect

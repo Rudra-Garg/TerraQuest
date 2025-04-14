@@ -3,9 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import GameView from '../views/GameView.vue'
 import LoginView from '../views/LoginView.vue';     // <<< Import LoginView
-import RegisterView from '../views/RegisterView.vue'; // <<< Import RegisterView
-// Import auth store to use in guards (might need careful handling if router initializes before store)
-import { useAuthStore } from '../stores/AuthStore';
+import RegisterView from '../views/RegisterView.vue';
+
 
 
 const routes = [
