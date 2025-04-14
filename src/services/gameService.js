@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/authStore'; // Adjust the import path as needed
+import { useAuthStore } from '../stores/AuthStore'; // Adjust the import path as needed
 
 const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 // Create an Axios instance
