@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     tailwindcss()
   ],
-  base: process.env.NODE_ENV === 'production' ? '/geoguessr/' : '/', // Update base URL for GitHub Pages
+  base: process.env.NODE_ENV === 'production' ? '/TerraQuest/' : '/', // Update base URL for GitHub Pages
   build: {
     outDir: 'dist',
   }
