@@ -1,4 +1,4 @@
-
+[![Deploy to GitHub Pages](https://github.com/Rudra-Garg/TerraQuest/actions/workflows/deploy.yml/badge.svg)](https://github.com/Rudra-Garg/TerraQuest/actions/workflows/deploy.yml)
 # TerraQuest 🌍
 
 A modern, interactive geography guessing game built with Vue 3 and Google Street View. Test your geography knowledge by exploring locations worldwide and pinpointing them on a map.
