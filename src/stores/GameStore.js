@@ -234,5 +234,8 @@ export const useGameStore = defineStore('game', () => {
         recordGuess,
         submitGuess,
         setMapsApiReady,
+        // Helper functions
+        calculateDistance,
+        calculateScore,
     };
 });

@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import GameView from '../views/GameView.vue'
 import LoginView from '../views/LoginView.vue';     // <<< Import LoginView
 import RegisterView from '../views/RegisterView.vue';
+import ProfileView from '../views/ProfileView.vue'
 import { useAuthStore } from '../stores/AuthStore';
 
 // Import multiplayer views
@@ -17,8 +18,8 @@ const routes = [
   { path: '/game', name: 'Game', component: GameView, meta: { requiresAuth: true } }, // <<< Mark as requiresAuth
   { path: '/login', name: 'Login', component: LoginView, meta: { guestOnly: true } },     // <<< Add Login route
   { path: '/register', name: 'Register', component: RegisterView, meta: { guestOnly: true } }, // <<< Add Register route
-  // Add routes for Profile, Leaderboard later (likely require auth)
-  // { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
+  { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
+  // Add routes for Leaderboard later (likely require auth)
   // { path: '/leaderboard', name: 'Leaderboard', component: LeaderboardView },
   
   // Multiplayer routes
