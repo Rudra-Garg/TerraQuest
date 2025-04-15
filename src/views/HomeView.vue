@@ -112,10 +112,20 @@
         </div>
 
         <div class="text-center mt-16">
-          <router-link to="/game"
-            class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg inline-block">
-            Start Playing Now
-          </router-link>
+          <div class="flex flex-col md:flex-row justify-center gap-4">
+            <router-link to="/game"
+              class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg inline-block">
+              Play Single Player
+            </router-link>
+            <router-link to="/multiplayer/create"
+              class="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg inline-block">
+              Create Multiplayer Game
+            </router-link>
+            <router-link to="/multiplayer/join"
+              class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg inline-block">
+              Join Multiplayer Game
+            </router-link>
+          </div>
         </div>
       </div>
     </section>
@@ -192,6 +202,10 @@
           <router-link to="/register"
             class="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-gray-900 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg">
             Sign Up Free
+          </router-link>
+          <router-link to="/multiplayer/join"
+            class="px-8 py-4 bg-purple-500 hover:bg-purple-400 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-bold text-lg">
+            Join Multiplayer
           </router-link>
           <router-link to="/game"
             class="px-8 py-4 bg-transparent border-2 border-white hover:bg-white/10 text-white rounded-lg transition-all duration-300 font-medium text-lg">

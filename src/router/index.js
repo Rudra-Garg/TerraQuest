@@ -6,6 +6,11 @@ import LoginView from '../views/LoginView.vue';     // <<< Import LoginView
 import RegisterView from '../views/RegisterView.vue';
 import { useAuthStore } from '../stores/AuthStore';
 
+// Import multiplayer views
+import MultiplayerLobby from '../views/MultiplayerLobby.vue'
+import CreateMultiplayerGame from '../views/CreateMultiplayerGame.vue'
+import JoinGame from '../views/JoinGame.vue'
+import MultiplayerGame from '../views/MultiplayerGame.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: HomeView },
@@ -15,6 +20,32 @@ const routes = [
   // Add routes for Profile, Leaderboard later (likely require auth)
   // { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
   // { path: '/leaderboard', name: 'Leaderboard', component: LeaderboardView },
+  
+  // Multiplayer routes
+  { 
+    path: '/multiplayer/create', 
+    name: 'CreateMultiplayerGame', 
+    component: CreateMultiplayerGame, 
+    meta: { requiresAuth: true } 
+  },
+  { 
+    path: '/multiplayer/join', 
+    name: 'JoinGame', 
+    component: JoinGame, 
+    meta: { requiresAuth: true } 
+  },
+  { 
+    path: '/multiplayer/lobby', 
+    name: 'MultiplayerLobby', 
+    component: MultiplayerLobby, 
+    meta: { requiresAuth: true } 
+  },
+  { 
+    path: '/multiplayer/game', 
+    name: 'MultiplayerGame', 
+    component: MultiplayerGame, 
+    meta: { requiresAuth: true } 
+  }
 ];
 
 const router = createRouter({
