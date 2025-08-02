@@ -35,15 +35,29 @@ let map = null;
 let guessMarker = null;
 let actualMarker = null;
 let resultLine = null;
+let currentSettings = {
+    showCoordinates: false,
+    enableZoom: true,
+    darkMode: false
+};
 
 function initializeMap() {
     if (!mapContainerRef.value || map) return; // Prevent re-init
 
     map = L.map(mapContainerRef.value, {
-        // Prefer loading state over default view for cleaner look
+        zoomControl: currentSettings.enableZoom,
+        scrollWheelZoom: currentSettings.enableZoom,
+        doubleClickZoom: currentSettings.enableZoom,
+        touchZoom: currentSettings.enableZoom,
+        boxZoom: currentSettings.enableZoom,
     }).setView([20, 0], 2);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+    // Use different tile layer based on dark mode setting
+    const tileUrl = currentSettings.darkMode ?
+        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' :
+        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+
+    L.tileLayer(tileUrl, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 10,
@@ -52,6 +66,11 @@ function initializeMap() {
 
     // Click listener (only active when round is active)
     map.on('click', handleMapClick);
+
+    // Add coordinates display if enabled
+    if (currentSettings.showCoordinates) {
+        addCoordinatesDisplay();
+    }
 }
 
 function handleMapClick(e) {
@@ -156,8 +175,89 @@ function resetMapState() {
     if (map) map.flyTo([20, 0], 2); // Reset view gently
 }
 
-// Expose the reset function so parent can call it before next round
-defineExpose({ resetMapState });
+function updateMapSettings(newSettings) {
+    currentSettings = { ...newSettings };
+
+    if (map) {
+        // Update zoom controls
+        if (newSettings.enableZoom) {
+            map.scrollWheelZoom.enable();
+            map.doubleClickZoom.enable();
+            map.touchZoom.enable();
+            map.boxZoom.enable();
+        } else {
+            map.scrollWheelZoom.disable();
+            map.doubleClickZoom.disable();
+            map.touchZoom.disable();
+            map.boxZoom.disable();
+        }
+
+        // Update tile layer for dark/light theme
+        map.eachLayer((layer) => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+
+        const tileUrl = newSettings.darkMode ?
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' :
+            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+
+        L.tileLayer(tileUrl, {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 10,
+            minZoom: 1
+        }).addTo(map);
+
+        // Add or remove coordinates display
+        if (newSettings.showCoordinates) {
+            addCoordinatesDisplay();
+        } else {
+            removeCoordinatesDisplay();
+        }
+    }
+}
+
+let coordinatesControl = null;
+
+function addCoordinatesDisplay() {
+    if (coordinatesControl || !map) return;
+
+    coordinatesControl = L.control({ position: 'bottomleft' });
+    coordinatesControl.onAdd = function () {
+        const div = L.DomUtil.create('div', 'coordinates-display');
+        div.style.background = 'rgba(0,0,0,0.8)';
+        div.style.color = 'white';
+        div.style.padding = '4px 8px';
+        div.style.borderRadius = '4px';
+        div.style.fontSize = '12px';
+        div.style.fontFamily = 'monospace';
+        div.innerHTML = 'Lat: 0.000, Lng: 0.000';
+        return div;
+    };
+    coordinatesControl.addTo(map);
+
+    map.on('mousemove', function (e) {
+        if (coordinatesControl) {
+            const container = coordinatesControl.getContainer();
+            if (container) {
+                container.innerHTML = `Lat: ${e.latlng.lat.toFixed(3)}, Lng: ${e.latlng.lng.toFixed(3)}`;
+            }
+        }
+    });
+}
+
+function removeCoordinatesDisplay() {
+    if (coordinatesControl && map) {
+        map.removeControl(coordinatesControl);
+        coordinatesControl = null;
+        map.off('mousemove');
+    }
+}
+
+// Expose functions for parent components
+defineExpose({ resetMapState, updateMapSettings });
 
 function handleResize() {
     if (map) {

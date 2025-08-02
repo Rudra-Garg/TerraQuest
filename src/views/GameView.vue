@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-screen h-screen overflow-hidden bg-black">
+  <div class="relative w-full max-w-screen-2xl mx-auto h-screen overflow-hidden bg-black">
 
     <!-- 1. Street View Background -->
     <div class="absolute inset-0 z-0">
@@ -19,19 +19,17 @@
           <p class="text-gray-300 text-lg">Preparing your location...</p>
         </div>
       </div>
-    </div>
-
-    <!-- 2. Game Overlay UI (Static Elements) -->
+    </div> <!-- 2. Game Overlay UI (Static Elements) -->
     <div v-if="GameStore.gameId && !GameStore.isGameOver && !isMapFullscreen"
-      class="absolute top-0 left-0 right-0 z-10 pointer-events-none">
-      <!-- Top Bar with Game Info -->
-      <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/90 to-transparent">
-        <div class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto">
+      class="absolute top-0 left-0 right-0 z-10 pointer-events-none"> <!-- Top Bar with Game Info -->
+      <div
+        class="flex flex-wrap justify-between items-center p-4 bg-gradient-to-b from-black/90 to-transparent gap-3 max-w-screen-2xl mx-auto">
+        <div class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto order-1">
           <div class="text-yellow-400 text-sm font-medium">TOTAL SCORE</div>
           <div class="text-white text-xl font-bold">{{ GameStore.totalScore }}</div>
         </div>
 
-        <div class="flex space-x-2 items-center">
+        <div class="flex space-x-2 items-center order-2 lg:order-2">
           <!-- Round Indicator -->
           <div class="flex space-x-1">
             <div v-for="round in GameStore.MAX_ROUNDS" :key="round" :class="[
@@ -51,35 +49,50 @@
         </div>
 
         <!-- Game Settings Button -->
-        <button class="bg-black/70 p-2 rounded-lg hover:bg-black/90 transition-colors pointer-events-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
+        <div class="relative order-3 lg:order-3">
+          <button @click="toggleSettings"
+            class="bg-black/70 p-2 rounded-lg hover:bg-black/90 transition-colors pointer-events-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button> <!-- Settings Dropdown -->
+          <div v-if="showSettings"
+            class="absolute top-12 right-0 bg-black/90 backdrop-blur-sm rounded-lg shadow-xl p-4 min-w-[200px] z-50 pointer-events-auto">
+            <h3 class="text-white text-sm font-semibold mb-3">Map Settings</h3>
+            <div class="space-y-2">
+              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
+                <input type="checkbox" v-model="mapSettings.showCoordinates" class="mr-2 rounded cursor-pointer"
+                  @click.stop>
+                Show Coordinates
+              </label>
+              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
+                <input type="checkbox" v-model="mapSettings.enableZoom" class="mr-2 rounded cursor-pointer" @click.stop>
+                Enable Zoom
+              </label>
+              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
+                <input type="checkbox" v-model="mapSettings.darkMode" class="mr-2 rounded cursor-pointer" @click.stop>
+                Dark Map Theme
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <!-- 3. Map Overlay (Bottom Right - Expandable) -->
+    </div> <!-- 3. Map Overlay (Bottom Right - Expandable) -->
     <div v-if="GameStore.gameId && !GameStore.isGameOver"
-      class="map-container group absolute transition-all duration-300 ease-in-out border-2 overflow-hidden" :class="{
+      class="map-container group absolute transition-all duration-500 ease-in-out border-2 overflow-hidden" :class="{
         'inset-0 z-40 border-none': isMapFullscreen || GameStore.hasSubmittedGuessForCurrentRound,
-        'bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 z-20 border-white/50 rounded-lg shadow-lg hover:w-[40vw] hover:h-[40vh] hover:border-white': !isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound
+        'bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 z-20 border-white/50 rounded-lg shadow-xl': !isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound,
+        'hover:w-[40vw] hover:h-[40vh] hover:border-white hover:z-30 hover:shadow-2xl': !isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound
       }">
       <MapDisplay @guess-made="handleMapGuess" ref="mapDisplayRef" :round-active="GameStore.isRoundActive"
         :submitted="GameStore.hasSubmittedGuessForCurrentRound"
         :actual-location="GameStore.hasSubmittedGuessForCurrentRound ? GameStore.getCurrentLocation : null"
         :guess-location="GameStore.hasSubmittedGuessForCurrentRound ? GameStore.getCurrentRoundResult?.guess : null"
         class="w-full h-full cursor-pointer" />
-
-      <!-- Show hint only when map is NOT enlarged and not yet submitted -->
-      <div v-if="!isMapFullscreen && !GameStore.hasSubmittedGuessForCurrentRound"
-        class="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none group-focus-within:opacity-0">
-        <span class="bg-black/80 px-2 py-1 rounded">Hover to enlarge</span>
-      </div>
 
       <!-- Result overlay visible only after guess submission -->
       <div v-if="GameStore.hasSubmittedGuessForCurrentRound && GameStore.getCurrentRoundResult"
@@ -167,7 +180,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          {{ GameStore.hasSubmittedGuessForCurrentRound ? "Guessed" : (GameStore.currentGuess ? "Submit Guess" : "Select a Location") }}
+          {{ GameStore.hasSubmittedGuessForCurrentRound ? "Guessed" : (GameStore.currentGuess ? "Submit Guess" : "Select          a Location") }}
         </button>
       </div>
     </div>
@@ -228,7 +241,7 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
             </path>
           </svg>
-          {{ !GameStore.isMapsApiReady ? "Initializing Maps..." : (GameStore.isLoading ? "Starting Game..." : "Start Adventure") }}
+          {{ !GameStore.isMapsApiReady ? "Initializing Maps..." : (GameStore.isLoading ? "Starting Game..." : "Start          Adventure") }}
         </button>
         <div class="flex items-center justify-center mt-6">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-300 mr-2" fill="none" viewBox="0 0 24 24"
@@ -325,6 +338,19 @@ const router = useRouter();
 const mapDisplayRef = ref(null);
 const isMapFullscreen = ref(false); // Renamed for clarity
 const gameError = ref(null);
+const showSettings = ref(false);
+const mapSettings = ref({
+  showCoordinates: false,
+  enableZoom: true,
+  darkMode: false
+});
+
+// Watch for settings changes and apply them to the map
+watch(() => mapSettings.value, (newSettings) => {
+  if (mapDisplayRef.value) {
+    mapDisplayRef.value.updateMapSettings(newSettings);
+  }
+}, { deep: true });
 
 function startGameHandler() {
   isMapFullscreen.value = false; // Reset map fullscreen state
@@ -359,6 +385,10 @@ function viewResultsHandler() {
 function shareResults() {
   // Future implementation for sharing results
   alert("Share feature coming soon!");
+}
+
+function toggleSettings() {
+  showSettings.value = !showSettings.value;
 }
 
 watch(() => GameStore.currentRoundNumber, (newRound, oldRound) => {

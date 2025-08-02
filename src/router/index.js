@@ -8,10 +8,10 @@ import ProfileView from '../views/ProfileView.vue'
 import { useAuthStore } from '../stores/AuthStore';
 
 // Import multiplayer views
-import MultiplayerLobby from '../views/MultiplayerLobby.vue'
-import CreateMultiplayerGame from '../views/CreateMultiplayerGame.vue'
-import JoinGame from '../views/JoinGame.vue'
+import MultiplayerLobby from '../views/MultiplayerLobby.vue';
+import CreateMultiplayerGame from '../views/CreateMultiplayerGame.vue';
 import MultiplayerGame from '../views/MultiplayerGame.vue'
+import JoinGame from '../views/JoinGame.vue';
 
 const routes = [
   { path: '/', name: 'Home', component: HomeView },
@@ -22,31 +22,31 @@ const routes = [
   // Add routes for Leaderboard later (likely require auth)
   // { path: '/leaderboard', name: 'Leaderboard', component: LeaderboardView },
   
-  // Multiplayer routes
-  { 
-    path: '/multiplayer/create', 
-    name: 'CreateMultiplayerGame', 
-    component: CreateMultiplayerGame, 
-    meta: { requiresAuth: true } 
+  // --- Multiplayer Routes ---
+  {
+    path: '/multiplayer/create',
+    name: 'CreateMultiplayerGame',
+    component: CreateMultiplayerGame,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/multiplayer/join',
+    name: 'JoinGame',
+    component: JoinGame,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/multiplayer/lobby',
+    name: 'MultiplayerLobby',
+    component: MultiplayerLobby,
+    meta: { requiresAuth: true }
   },
   { 
-    path: '/multiplayer/join', 
-    name: 'JoinGame', 
-    component: JoinGame, 
-    meta: { requiresAuth: true } 
+    path: '/multiplayer/game',
+    name: 'MultiplayerGame',
+    component: MultiplayerGame,
+    meta: { requiresAuth: true }
   },
-  { 
-    path: '/multiplayer/lobby', 
-    name: 'MultiplayerLobby', 
-    component: MultiplayerLobby, 
-    meta: { requiresAuth: true } 
-  },
-  { 
-    path: '/multiplayer/game', 
-    name: 'MultiplayerGame', 
-    component: MultiplayerGame, 
-    meta: { requiresAuth: true } 
-  }
 ];
 
 const router = createRouter({

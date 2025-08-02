@@ -98,7 +98,7 @@ const authStore = useAuthStore();
 // Get round numbers (1-based)
 const roundNumbers = computed(() => {
   const rounds = [];
-  for (let i = 1; i <= gameStore.MAX_ROUNDS; i++) {
+  for (let i = 1; i <= multiplayerStore.roundsTotal; i++) {
     rounds.push(i);
   }
   return rounds;
@@ -118,19 +118,27 @@ function isCurrentUser(userId) {
 
 // Get player's score for a specific round (0-based round index)
 function getRoundScore(userId, roundIndex) {
-  const results = multiplayerStore.playerResults[userId];
+  const results = multiplayerStore.playerRoundResults[userId];
   if (!results || !results[roundIndex]) return '-';
-  return results[roundIndex].score || 0;
+  const score = results[roundIndex].score;
+  return typeof score === 'number' ? score : 0;
 }
 
 // Get player's total score
 function getPlayerTotalScore(userId) {
-  const results = multiplayerStore.playerResults[userId];
+  // First try to get from the final standings data (more reliable)
+  const player = multiplayerStore.players.find(p => p.userId === userId);
+  if (player && typeof player.totalScore === 'number') {
+    return player.totalScore;
+  }
+  
+  // Fallback to calculating from round results
+  const results = multiplayerStore.playerRoundResults[userId];
   if (!results) return 0;
   
   let total = 0;
   for (const round of results) {
-    if (round && round.score) {
+    if (round && typeof round.score === 'number') {
       total += round.score;
     }
   }
@@ -139,12 +147,12 @@ function getPlayerTotalScore(userId) {
 
 // Get player's best round score
 function getBestRoundScore(userId) {
-  const results = multiplayerStore.playerResults[userId];
+  const results = multiplayerStore.playerRoundResults[userId];
   if (!results) return 0;
   
   let best = 0;
   for (const round of results) {
-    if (round && round.score && round.score > best) {
+    if (round && typeof round.score === 'number' && round.score > best) {
       best = round.score;
     }
   }
