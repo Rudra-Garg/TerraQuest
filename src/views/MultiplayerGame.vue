@@ -1,262 +1,669 @@
-<template><!-- 1. Root Container -->
-  <div class="relative w-full max-w-screen-2xl mx-auto h-screen overflow-hidden bg-black">
-
-    <!-- 2. Street View Background -->
-    <div class="absolute inset-0 z-0">
-      <StreetViewDisplay v-if="currentLocation && !gameStore.isGameOver"
-        :key="`${gameStore.currentRoundNumber}-${currentLocation?.lat}-${currentLocation?.lng}`"
-        :location="currentLocation" class="w-full h-full" />
-      <!-- ... (loading/waiting for game start placeholders remain the same) ... -->
-      <div v-else-if="!currentLocation && gameStore.gameId && !gameStore.isGameOver && gameStore.currentRoundNumber > 0"
-        class="w-full h-full bg-gray-800 flex items-center justify-center text-gray-300">
-        <div class="flex flex-col items-center">
-          <svg class="animate-spin h-12 w-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-          </svg>
-          <p class="text-lg">Loading Round {{ gameStore.currentRoundNumber }} Location...</p>
-        </div>
-      </div>
-      <div v-else-if="!gameStore.gameId || gameStore.currentRoundNumber === 0"
-        class="w-full h-full bg-gray-800 flex items-center justify-center text-gray-300">
-        Waiting for game to start...
-      </div>
-    </div>
-
-    <!-- 3. Top Info Bar -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen"
-      class="absolute top-0 left-0 right-0 z-10 pointer-events-none">
-      <div
-        class="flex flex-wrap justify-between items-center p-4 bg-gradient-to-b from-black/90 to-transparent gap-4 max-w-screen-2xl mx-auto">
-        <div class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto">
-          <div class="text-yellow-400 text-sm font-medium uppercase">Your Score</div>
-          <div class="text-white text-xl font-bold">{{ getCurrentUserSession?.totalScore ?? 0 }}</div>
-        </div>
-
-        <div
-          v-if="isRoundTimerActive && roundTimeRemaining > 0 && !multiplayerStore.isWaitingForRoundEnd && !showRoundResults"
-          class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto text-center">
-          <div v-if="!multiplayerStore.firstPlayerGuessedInRound && gameStore.isRoundActive"
-            class="text-yellow-400 text-sm font-medium uppercase">WAITING FOR FIRST GUESS</div>
-          <div v-else-if="roundTimeRemaining > 0" class="text-red-400 text-sm font-medium uppercase">TIME LEFT</div>
-
-          <div class="text-white text-2xl font-mono font-bold tracking-wider"
-            :class="{ 'animate-pulse !text-red-500': roundTimeRemaining <= 10 && roundTimeRemaining > 0 }">
-            {{ formatTime(roundTimeRemaining) }}
-          </div>
-        </div>
-
-        <div class="flex space-x-1 items-center pointer-events-auto">
-          <div v-for="round in gameStore.MAX_ROUNDS" :key="round" :class="[
-            'w-6 h-6 rounded-full flex items-center justify-center border-2',
-            round < gameStore.currentRoundNumber ? 'bg-green-500 border-green-400' :
-              round === gameStore.currentRoundNumber ? 'bg-blue-600 border-blue-500 animate-pulse' :
-                'bg-gray-700/70 border-gray-600'
-          ]">
-            <span class="text-xs font-bold text-white">{{ round }}</span>
-          </div>
-        </div>
-        <div class="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg pointer-events-auto">
-          <div class="text-blue-300 text-sm font-medium uppercase">Game Code</div>
-          <div class="text-white text-lg font-mono font-bold tracking-wider">{{ multiplayerStore.gameCode }}</div>
-        </div>
-
-        <!-- Game Settings Button -->
-        <div class="relative">
-          <button @click="toggleSettings"
-            class="bg-black/70 p-2 rounded-lg hover:bg-black/90 transition-colors pointer-events-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button> <!-- Settings Dropdown -->
-          <div v-if="showSettings"
-            class="absolute top-12 right-0 bg-black/90 backdrop-blur-sm rounded-lg shadow-xl p-4 min-w-[200px] z-50 pointer-events-auto">
-            <h3 class="text-white text-sm font-semibold mb-3">Map Settings</h3>
-            <div class="space-y-2">
-              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
-                <input type="checkbox" v-model="mapSettings.showCoordinates" class="mr-2 rounded cursor-pointer"
-                  @click.stop>
-                Show Coordinates
-              </label>
-              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
-                <input type="checkbox" v-model="mapSettings.enableZoom" class="mr-2 rounded cursor-pointer" @click.stop>
-                Enable Zoom
-              </label>
-              <label class="flex items-center text-white text-sm cursor-pointer" @click.stop>
-                <input type="checkbox" v-model="mapSettings.darkMode" class="mr-2 rounded cursor-pointer" @click.stop>
-                Dark Map Theme
-              </label>
+<template>
+    <div class="relative w-full h-screen overflow-hidden bg-[#09090B]">
+        <!-- ═══════════════════════════════════════════════
+             1. STREET VIEW (fullscreen background)
+        ═══════════════════════════════════════════════ -->
+        <div class="absolute inset-0 z-0">
+            <StreetViewDisplay
+                v-if="currentLocation && !gameStore.isGameOver"
+                :key="`${gameStore.currentRoundNumber}-${currentLocation?.lat}-${currentLocation?.lng}`"
+                :location="currentLocation"
+                class="w-full h-full"
+            />
+            <!-- Loading round location -->
+            <div
+                v-else-if="
+                    !currentLocation &&
+                    gameStore.gameId &&
+                    !gameStore.isGameOver &&
+                    gameStore.currentRoundNumber > 0
+                "
+                class="w-full h-full bg-[#09090B] flex items-center justify-center"
+            >
+                <div class="flex flex-col items-center gap-4">
+                    <svg
+                        class="animate-spin h-8 w-8 text-[#D36040]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            class="opacity-20"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        />
+                        <path
+                            class="opacity-80"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                    </svg>
+                    <p class="text-xs text-white/30 tracking-[0.2em] uppercase">
+                        Loading Round {{ gameStore.currentRoundNumber }}…
+                    </p>
+                </div>
             </div>
-          </div>
+            <!-- Waiting for game to start -->
+            <div
+                v-else-if="
+                    !gameStore.gameId || gameStore.currentRoundNumber === 0
+                "
+                class="w-full h-full bg-[#09090B] flex flex-col items-center justify-center gap-4"
+            >
+                <div
+                    class="w-px h-8 bg-[#D36040]/50 animate-[pulse_2s_ease-in-out_infinite]"
+                ></div>
+                <p class="text-xs text-white/30 tracking-[0.2em] uppercase">
+                    Waiting for host…
+                </p>
+            </div>
         </div>
-      </div>
-    </div> <!-- 4. Player Status Bar -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen"
-      class="absolute top-[80px] left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl xl:max-w-5xl z-10 pointer-events-auto">
-      <div class="player-status-bar bg-black/75 backdrop-blur-md p-3 rounded-lg shadow-md">
-        <div class="flex flex-wrap gap-x-4 gap-y-2 justify-center">
-          <div v-for="player in multiplayerStore.players" :key="player.userId"
-            class="flex items-center px-3 py-1.5 rounded-md text-sm whitespace-nowrap"
-            :class="getPlayerStatusClass(player)">
-            <span class="font-semibold mr-2 truncate max-w-[120px]" :title="player.username">{{ player.username
-            }}</span>
-            <span class="text-xs opacity-80">({{ player.currentHealth }}HP)</span>
-            <svg v-if="hasPlayerSubmittedGuessThisRound(player.userId)" class="h-3 w-3 text-green-400 ml-1"
-              fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clip-rule="evenodd" />
-            </svg>
-            <svg
-              v-else-if="gameStore.isRoundActive && player.status === 'active' && !multiplayerStore.isWaitingForRoundEnd && !showRoundResults"
-              class="h-3 w-3 text-yellow-400 animate-pulse ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div> <!-- 5. Map Overlay Container -->
-    <div v-if="gameStore.gameId && !gameStore.isGameOver"
-      class="map-container group absolute transition-all duration-500 ease-in-out border-2 overflow-hidden" :class="{
-        'inset-0 z-40 border-none rounded-none': isMapFullscreen || showRoundResults,
-        'bottom-5 right-5 w-48 h-36 md:w-56 md:h-44 lg:w-64 lg:h-48 z-20 border-white/50 rounded-lg shadow-xl hover:w-[40vw] hover:h-[40vh] hover:border-white hover:z-30': !isMapFullscreen && !showRoundResults
-      }">
-      <MapDisplay @guess-made="handleMapGuess" ref="mapDisplayRef" :key="`map-${gameStore.currentRoundNumber}`"
-        :round-active="gameStore.isRoundActive && !multiplayerStore.isWaitingForRoundEnd && !showRoundResults"
-        :submitted="showRoundResults"
-        :actual-location="showRoundResults ? multiplayerStore.currentRoundActualLocation : null"
-        :guess-location="showRoundResults ? getCurrentUserRoundResult?.guess : null"
-        class="w-full h-full cursor-pointer" />
 
-      <div v-if="showRoundResults"
-        class="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg text-sm max-w-xs shadow-lg z-50">
-        <div class="flex items-center mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <h3 class="font-bold text-lg">Round {{ gameStore.currentRoundNumber }} Result</h3>
+        <!-- ═══════════════════════════════════════════════
+             2. HUD — TOP BAR (visible during active game)
+        ═══════════════════════════════════════════════ -->
+        <div
+            v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen"
+            class="absolute top-0 left-0 right-0 z-20 pointer-events-none"
+        >
+            <div
+                class="flex flex-wrap items-start justify-between p-4 md:p-5 bg-gradient-to-b from-black/80 via-black/40 to-transparent gap-4"
+            >
+                <!-- Left: Score -->
+                <div
+                    class="bg-black/50 backdrop-blur-md border border-white/[0.1] rounded-xl px-4 py-2.5 pointer-events-auto shadow-xl"
+                >
+                    <p
+                        class="text-[10px] text-white/35 uppercase tracking-widest font-medium leading-none mb-1"
+                    >
+                        Score
+                    </p>
+                    <p
+                        class="text-xl font-light text-white tabular-nums leading-none"
+                    >
+                        {{ getCurrentUserSession?.totalScore ?? 0 }}
+                    </p>
+                </div>
+
+                <!-- Center: Timer & Round Dots -->
+                <div class="flex flex-col items-center gap-3">
+                    <!-- Timer -->
+                    <div
+                        v-if="
+                            isRoundTimerActive &&
+                            roundTimeRemaining > 0 &&
+                            !multiplayerStore.isWaitingForRoundEnd &&
+                            !showRoundResults
+                        "
+                        class="bg-black/50 backdrop-blur-md border border-white/[0.1] rounded-xl px-5 py-2 pointer-events-auto shadow-xl text-center min-w-[120px]"
+                    >
+                        <p
+                            v-if="
+                                !multiplayerStore.firstPlayerGuessedInRound &&
+                                gameStore.isRoundActive
+                            "
+                            class="text-[9px] text-[#D36040] uppercase tracking-widest font-medium mb-0.5 animate-pulse"
+                        >
+                            Waiting for guess
+                        </p>
+                        <p
+                            v-else-if="roundTimeRemaining > 0"
+                            class="text-[9px] text-white/40 uppercase tracking-widest font-medium mb-0.5"
+                        >
+                            Time left
+                        </p>
+                        <p
+                            class="text-xl font-mono text-white tracking-wider leading-none"
+                            :class="{
+                                'animate-pulse !text-red-400':
+                                    roundTimeRemaining <= 10 &&
+                                    roundTimeRemaining > 0,
+                            }"
+                        >
+                            {{ formatTime(roundTimeRemaining) }}
+                        </p>
+                    </div>
+
+                    <!-- Round dots -->
+                    <div class="flex items-center gap-2 pointer-events-auto">
+                        <div
+                            v-for="round in gameStore.MAX_ROUNDS"
+                            :key="round"
+                            class="transition-all duration-300 rounded-full"
+                            :class="[
+                                round < gameStore.currentRoundNumber
+                                    ? 'w-2 h-2 bg-white/60'
+                                    : round === gameStore.currentRoundNumber
+                                      ? 'w-3 h-3 bg-[#D36040] shadow-lg shadow-[#D36040]/50'
+                                      : 'w-2 h-2 bg-white/15',
+                            ]"
+                        />
+                    </div>
+                </div>
+
+                <!-- Right: Game Code & Settings -->
+                <div class="flex items-start gap-3 pointer-events-auto">
+                    <!-- Game code -->
+                    <div
+                        class="hidden sm:block bg-black/50 backdrop-blur-md border border-white/[0.1] rounded-xl px-4 py-2.5 shadow-xl text-right"
+                    >
+                        <p
+                            class="text-[10px] text-white/35 uppercase tracking-widest font-medium leading-none mb-1"
+                        >
+                            Room Code
+                        </p>
+                        <p
+                            class="text-sm font-mono text-white tracking-widest leading-none"
+                        >
+                            {{ multiplayerStore.gameCode }}
+                        </p>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="relative">
+                        <button
+                            @click="toggleSettings"
+                            class="bg-black/50 backdrop-blur-md border border-white/[0.1] rounded-xl p-2.5 text-white/50 hover:text-white hover:bg-black/70 transition-all shadow-xl"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="1.5"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                />
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="1.5"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                            </svg>
+                        </button>
+                        <!-- Settings Dropdown -->
+                        <div
+                            v-if="showSettings"
+                            class="absolute top-12 right-0 bg-[#111117]/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl p-4 min-w-[200px] z-50 pointer-events-auto"
+                        >
+                            <p
+                                class="text-[10px] text-white/30 uppercase tracking-widest font-medium mb-3"
+                            >
+                                Map Settings
+                            </p>
+                            <div class="space-y-3">
+                                <label
+                                    class="flex items-center gap-3 text-sm text-white/70 hover:text-white cursor-pointer transition-colors"
+                                    @click.stop
+                                >
+                                    <input
+                                        type="checkbox"
+                                        v-model="mapSettings.showCoordinates"
+                                        class="accent-[#D36040] w-3.5 h-3.5"
+                                        @click.stop
+                                    />
+                                    Show Coordinates
+                                </label>
+                                <label
+                                    class="flex items-center gap-3 text-sm text-white/70 hover:text-white cursor-pointer transition-colors"
+                                    @click.stop
+                                >
+                                    <input
+                                        type="checkbox"
+                                        v-model="mapSettings.enableZoom"
+                                        class="accent-[#D36040] w-3.5 h-3.5"
+                                        @click.stop
+                                    />
+                                    Enable Zoom
+                                </label>
+                                <label
+                                    class="flex items-center gap-3 text-sm text-white/70 hover:text-white cursor-pointer transition-colors"
+                                    @click.stop
+                                >
+                                    <input
+                                        type="checkbox"
+                                        v-model="mapSettings.darkMode"
+                                        class="accent-[#D36040] w-3.5 h-3.5"
+                                        @click.stop
+                                    />
+                                    Dark Map Theme
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="space-y-1 mb-2">
-          <p class="text-xs text-gray-400">Winner: <span class="font-semibold text-green-400">{{ roundWinnerUsername
-              }}</span> ({{ roundWinnerScore }} pts)</p>
-          <p class="text-xs text-gray-400">Damage Multiplier: {{ multiplayerStore.currentRoundMultiplier.toFixed(1) }}x
-          </p>
+
+        <!-- ═══════════════════════════════════════════════
+             3. PLAYER STATUS BAR (below top bar)
+        ═══════════════════════════════════════════════ -->
+        <div
+            v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen"
+            class="absolute top-[88px] left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-4xl xl:max-w-5xl z-10 pointer-events-auto"
+        >
+            <div
+                class="flex flex-wrap justify-center gap-2 p-2 bg-black/40 backdrop-blur-md border border-white/[0.08] rounded-xl shadow-lg"
+            >
+                <div
+                    v-for="player in multiplayerStore.players"
+                    :key="player.userId"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300"
+                    :class="getPlayerStatusClass(player)"
+                >
+                    <span
+                        class="text-xs font-medium truncate max-w-[100px]"
+                        :title="player.username"
+                        >{{ player.username }}</span
+                    >
+                    <span class="text-[10px] opacity-70 font-mono"
+                        >{{ player.currentHealth }}HP</span
+                    >
+                    <!-- Guessed checkmark -->
+                    <svg
+                        v-if="hasPlayerSubmittedGuessThisRound(player.userId)"
+                        class="w-3.5 h-3.5 opacity-90"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    <!-- Waiting indicator -->
+                    <span
+                        v-else-if="
+                            gameStore.isRoundActive &&
+                            player.status === 'active' &&
+                            !multiplayerStore.isWaitingForRoundEnd &&
+                            !showRoundResults
+                        "
+                        class="w-1.5 h-1.5 rounded-full bg-current opacity-70 animate-pulse ml-1"
+                    ></span>
+                </div>
+            </div>
         </div>
-        <div class="space-y-3 max-h-48 overflow-y-auto pr-2">
-          <div v-for="playerResult in detailedPlayerResultsForCurrentRound" :key="playerResult.userId"
-            class="border-b border-gray-700 pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-            <p class="font-semibold text-sm"
-              :class="{ 'text-blue-300': playerResult.userId === authStore.userProfile?.id }">{{ playerResult.username
-              }}
+
+        <!-- ═══════════════════════════════════════════════
+             4. MAP & RESULT OVERLAY
+        ═══════════════════════════════════════════════ -->
+        <div
+            v-if="gameStore.gameId && !gameStore.isGameOver"
+            class="map-container group absolute transition-all duration-500 ease-in-out overflow-hidden"
+            :class="{
+                'inset-0 z-40 rounded-none border-0':
+                    isMapFullscreen || showRoundResults,
+                'bottom-24 right-5 w-52 h-40 md:w-64 md:h-48 z-20 rounded-xl border border-white/20 shadow-2xl shadow-black/50 hover:w-[38vw] hover:h-[35vh] hover:shadow-black/70':
+                    !isMapFullscreen && !showRoundResults,
+            }"
+        >
+            <MapDisplay
+                @guess-made="handleMapGuess"
+                ref="mapDisplayRef"
+                :key="`map-${gameStore.currentRoundNumber}`"
+                :round-active="
+                    gameStore.isRoundActive &&
+                    !multiplayerStore.isWaitingForRoundEnd &&
+                    !showRoundResults
+                "
+                :submitted="showRoundResults"
+                :actual-location="
+                    showRoundResults
+                        ? multiplayerStore.currentRoundActualLocation
+                        : null
+                "
+                :guess-location="
+                    showRoundResults ? getCurrentUserRoundResult?.guess : null
+                "
+                class="w-full h-full cursor-crosshair"
+            />
+
+            <!-- Expand hint (minimap only) -->
+            <div
+                v-if="!isMapFullscreen && !showRoundResults"
+                class="absolute bottom-2 left-2 text-[9px] text-white/40 bg-black/60 px-1.5 py-0.5 rounded pointer-events-none group-hover:opacity-0 transition-opacity"
+            >
+                Hover to expand
+            </div>
+
+            <!-- ── Round Results Overlay (Fullscreen Map) ── -->
+            <div
+                v-if="showRoundResults"
+                class="absolute top-4 left-4 bg-[#111117]/95 backdrop-blur-xl border border-white/[0.1] text-white p-5 rounded-2xl shadow-2xl z-50 w-72 max-h-[80vh] flex flex-col"
+            >
+                <div class="mb-4">
+                    <p
+                        class="text-[10px] text-[#D36040] uppercase tracking-widest font-medium mb-2"
+                    >
+                        Round {{ gameStore.currentRoundNumber }} Results
+                    </p>
+                    <p class="text-xs text-white/60 mb-0.5">
+                        Winner:
+                        <span class="text-white font-medium"
+                            >{{ roundWinnerUsername }}
+                        </span>
+                        ({{ roundWinnerScore }} pts)
+                    </p>
+                    <p class="text-[10px] text-white/40 font-mono">
+                        Multiplier:
+                        {{
+                            multiplayerStore.currentRoundMultiplier.toFixed(1)
+                        }}x
+                    </p>
+                </div>
+
+                <div class="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                    <div
+                        v-for="playerResult in detailedPlayerResultsForCurrentRound"
+                        :key="playerResult.userId"
+                        class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3"
+                    >
+                        <div class="flex items-center justify-between mb-2">
+                            <p
+                                class="text-sm font-medium truncate"
+                                :class="
+                                    playerResult.userId ===
+                                    authStore.userProfile?.id
+                                        ? 'text-[#D36040]'
+                                        : 'text-white/90'
+                                "
+                            >
+                                {{ playerResult.username }}
+                            </p>
+                            <span class="text-xs font-mono text-white/70"
+                                >{{ playerResult.roundScore }} pts</span
+                            >
+                        </div>
+                        <div
+                            class="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]"
+                        >
+                            <p class="text-white/40 uppercase tracking-wider">
+                                Distance
+                            </p>
+                            <p class="text-right text-white/80 tabular-nums">
+                                {{
+                                    playerResult.distanceKm < 0
+                                        ? "N/A"
+                                        : playerResult.distanceKm.toFixed(1) +
+                                          " km"
+                                }}
+                            </p>
+
+                            <p class="text-white/40 uppercase tracking-wider">
+                                Damage
+                            </p>
+                            <p class="text-right text-red-400 tabular-nums">
+                                -{{ playerResult.damageTaken }}
+                            </p>
+
+                            <p class="text-white/40 uppercase tracking-wider">
+                                Health
+                            </p>
+                            <p class="text-right text-white/80 tabular-nums">
+                                {{ playerResult.currentHealth }} /
+                                {{ multiplayerStore.initialHealth }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Host Next Round / Finish Game Controls -->
+            <div
+                v-if="showRoundResults"
+                class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-50"
+            >
+                <button
+                    v-if="multiplayerStore.isHost"
+                    @click="handleHostProceed"
+                    :disabled="!multiplayerStore.isHost || isAdvancing"
+                    class="flex items-center gap-2.5 px-7 py-3 bg-[#D36040] hover:bg-[#b04a2e] disabled:bg-[#D36040]/50 disabled:cursor-not-allowed text-white font-medium rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-[#D36040]/30 text-sm"
+                >
+                    <template v-if="isAdvancing">
+                        <svg
+                            class="animate-spin w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                        </svg>
+                        Loading…
+                    </template>
+                    <template v-else>
+                        {{ isLastRound ? "View Final Results" : "Next Round" }}
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                :d="
+                                    isLastRound
+                                        ? 'M5 13l4 4L19 7'
+                                        : 'M13 7l5 5m0 0l-5 5m5-5H6'
+                                "
+                            />
+                        </svg>
+                    </template>
+                </button>
+                <div
+                    v-else-if="showRoundResults && !gameStore.isGameOver"
+                    class="px-6 py-2.5 bg-black/60 backdrop-blur-md border border-white/[0.1] rounded-full text-xs text-white/50 tracking-wider uppercase"
+                >
+                    Waiting for host…
+                </div>
+            </div>
+
+            <!-- "Waiting for others" Overlay (Before round ends) -->
+            <div
+                v-if="
+                    multiplayerStore.isWaitingForRoundEnd && !showRoundResults
+                "
+                class="absolute inset-0 bg-black/80 backdrop-blur-md z-30 flex flex-col items-center justify-center text-center p-4"
+            >
+                <svg
+                    class="animate-spin h-8 w-8 text-[#D36040] mb-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        class="opacity-20"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    ></circle>
+                    <path
+                        class="opacity-80"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                </svg>
+                <p class="text-sm font-medium text-white mb-1">
+                    Guess submitted
+                </p>
+                <p class="text-xs text-white/40">
+                    Waiting for others or timer…
+                </p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════
+             5. BOTTOM CONTROLS (Submit Guess)
+        ═══════════════════════════════════════════════ -->
+        <div
+            v-if="
+                gameStore.gameId &&
+                !gameStore.isGameOver &&
+                !isMapFullscreen &&
+                !multiplayerStore.isWaitingForRoundEnd &&
+                !showRoundResults
+            "
+            class="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+        >
+            <p
+                v-if="gameStore.currentGuess"
+                class="text-[11px] font-mono text-white/50 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/[0.08]"
+            >
+                {{ gameStore.currentGuess.lat.toFixed(4) }}°,
+                {{ gameStore.currentGuess.lng.toFixed(4) }}°
             </p>
-            <p class="text-xs">Score: <span class="font-medium text-green-300">{{ playerResult.roundScore }} pts</span>
-            </p>
-            <p class="text-xs">Distance: <span class="font-medium">{{ playerResult.distanceKm < 0 ? 'N/A' :
-              playerResult.distanceKm.toFixed(1) + ' km' }}</span>
-            </p>
-            <p class="text-xs">Damage: <span class="font-medium text-red-400">{{ playerResult.damageTaken }}</span></p>
-            <p class="text-xs">Health: <span class="font-medium">{{ playerResult.currentHealth }} / {{
-              multiplayerStore.initialHealth }}</span></p>
-          </div>
+
+            <button
+                @click="submitGuessHandler"
+                :disabled="
+                    !gameStore.currentGuess ||
+                    !gameStore.isRoundActive ||
+                    multiplayerStore.isWaitingForRoundEnd ||
+                    showRoundResults
+                "
+                class="flex items-center gap-3 px-10 py-3.5 font-medium rounded-full transition-all text-sm shadow-2xl"
+                :class="
+                    gameStore.currentGuess && gameStore.isRoundActive
+                        ? 'bg-[#D36040] hover:bg-[#b04a2e] text-white shadow-[#D36040]/30 hover:scale-[1.02] active:scale-[0.98]'
+                        : 'bg-black/50 backdrop-blur-md border border-white/[0.1] text-white/30 cursor-not-allowed'
+                "
+            >
+                <svg
+                    v-if="gameStore.currentGuess"
+                    class="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                </svg>
+                <svg
+                    v-else
+                    class="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"
+                    />
+                </svg>
+                {{
+                    gameStore.currentGuess
+                        ? "Submit Guess"
+                        : "Click the map to place a pin"
+                }}
+            </button>
         </div>
-      </div>
 
-      <div v-if="showRoundResults" class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 z-50">
-        <button v-if="multiplayerStore.isHost" @click="handleHostProceed" :disabled="!multiplayerStore.isHost" class="px-6 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg shadow-lg hover:bg-blue-700
-          transition-all flex items-center disabled:opacity-60 disabled:cursor-not-allowed">
-          {{ isLastRound ? 'View Final Results' : 'Next Round' }}
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              :d="isLastRound ? 'M5 13l4 4L19 7' : 'M13 7l5 5m0 0l-5 5m5-5H6'" />
-          </svg>
-        </button>
-        <div v-if="!multiplayerStore.isHost && showRoundResults && !gameStore.isGameOver"
-          class="text-white text-sm p-3 bg-black/70 rounded-lg">
-          Waiting for host to start next round...</div>
-      </div>
-
-      <div v-if="multiplayerStore.isWaitingForRoundEnd && !showRoundResults"
-        class="absolute inset-0 bg-black/70 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-white p-4 text-center">
-        <svg class="animate-spin h-8 w-8 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-          </path>
-        </svg>
-        <p class="text-lg font-medium">Your guess is submitted!</p>
-        <p class="text-sm mt-1">Waiting for other players or timer to finish...</p>
-      </div>
-    </div>
-
-    <!-- 6. Bottom Controls -->
-    <div
-      v-if="gameStore.gameId && !gameStore.isGameOver && !isMapFullscreen && !multiplayerStore.isWaitingForRoundEnd && !showRoundResults"
-      class="controls-container absolute bottom-5 left-1/2 -translate-x-1/2 z-30 p-3 md:p-4 bg-black/80 backdrop-blur-md rounded-xl shadow-lg flex flex-col items-center space-y-2 border border-gray-700">
-      <p v-if="gameStore.currentGuess" class="text-xs text-gray-300 mb-1">
-        Selected: {{ gameStore.currentGuess.lat.toFixed(3) }}°, {{ gameStore.currentGuess.lng.toFixed(3) }}°
-      </p>
-      <button @click="submitGuessHandler"
-        :disabled="!gameStore.currentGuess || !gameStore.isRoundActive || multiplayerStore.isWaitingForRoundEnd || showRoundResults"
-        class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg shadow-lg hover:from-green-700 hover:to-green-600 disabled:from-gray-500 disabled:to-gray-400 disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-150 ease-in-out font-medium flex items-center">
-        <svg v-if="!gameStore.currentGuess" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-        </svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-        {{ gameStore.currentGuess ? "Submit Guess" : "Select a Location" }}
-      </button>
-    </div>
-
-    <!-- 7. Game Over Screen -->
-    <div v-if="gameStore.isGameOver && multiplayerStore.gameId"
-      class="absolute inset-0 bg-gradient-to-br from-green-800 via-blue-900 to-indigo-900 flex flex-col items-center justify-center p-4 sm:p-6 z-50">
-      <MultiplayerResults />
-    </div>
-
-    <!-- Error Message Display -->
-    <div v-if="multiplayerStore.error"
-      class="fixed top-5 left-1/2 -translate-x-1/2 z-[60] bg-red-100 border-l-4 border-red-500 text-red-700 px-6 py-3 rounded-lg shadow-xl text-center max-w-md">
-      <div class="flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <p class="font-bold mb-1">Error</p>
-          <p>{{ multiplayerStore.error }}</p>
+        <!-- ═══════════════════════════════════════════════
+             6. GAME OVER SCREEN
+        ═══════════════════════════════════════════════ -->
+        <div
+            v-if="gameStore.isGameOver && multiplayerStore.gameId"
+            class="absolute inset-0 bg-[#09090B] flex items-center justify-center z-50 overflow-auto"
+        >
+            <MultiplayerResults />
         </div>
-      </div>
-      <button @click="multiplayerStore.error = null"
-        class="mt-3 px-3 py-1.5 bg-red-600 text-white rounded-md text-xs hover:bg-red-700 transition-colors">Dismiss</button>
+
+        <!-- ═══════════════════════════════════════════════
+             7. ERROR TOAST
+        ═══════════════════════════════════════════════ -->
+        <transition name="toast">
+            <div
+                v-if="multiplayerStore.error"
+                class="fixed top-5 left-1/2 -translate-x-1/2 z-[60] max-w-sm w-full px-4"
+            >
+                <div
+                    class="flex items-start gap-3 px-4 py-3.5 bg-[#111117] border border-red-500/25 rounded-xl shadow-2xl"
+                >
+                    <svg
+                        class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white">Error</p>
+                        <p class="text-sm text-white/50 mt-0.5">
+                            {{ multiplayerStore.error }}
+                        </p>
+                    </div>
+                    <button
+                        @click="multiplayerStore.error = null"
+                        class="text-white/30 hover:text-white transition-colors flex-shrink-0 mt-0.5"
+                    >
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </transition>
     </div>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { useGameStore } from '../stores/GameStore';
-import { useMultiplayerStore } from '../stores/MultiplayerStore';
-import { useAuthStore } from '../stores/AuthStore';
-import StreetViewDisplay from '../components/StreetViewDisplay.vue';
-import MapDisplay from '../components/MapDisplay.vue';
-import MultiplayerResults from '../components/MultiplayerResults.vue';
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useGameStore } from "../stores/GameStore";
+import { useMultiplayerStore } from "../stores/MultiplayerStore";
+import { useAuthStore } from "../stores/AuthStore";
+import StreetViewDisplay from "../components/StreetViewDisplay.vue";
+import MapDisplay from "../components/MapDisplay.vue";
+import MultiplayerResults from "../components/MultiplayerResults.vue";
 
 const router = useRouter();
 const gameStore = useGameStore();
@@ -264,20 +671,24 @@ const multiplayerStore = useMultiplayerStore();
 const authStore = useAuthStore();
 const mapDisplayRef = ref(null);
 const isMapFullscreen = ref(false);
+const isAdvancing = ref(false);
 
 const showSettings = ref(false);
 const mapSettings = ref({
-  showCoordinates: false,
-  enableZoom: true,
-  darkMode: false
+    showCoordinates: false,
+    enableZoom: true,
+    darkMode: false,
 });
 
-// Watch for settings changes and apply them to the map
-watch(() => mapSettings.value, (newSettings) => {
-  if (mapDisplayRef.value) {
-    mapDisplayRef.value.updateMapSettings(newSettings);
-  }
-}, { deep: true });
+watch(
+    () => mapSettings.value,
+    (newSettings) => {
+        if (mapDisplayRef.value) {
+            mapDisplayRef.value.updateMapSettings(newSettings);
+        }
+    },
+    { deep: true },
+);
 
 // --- Timer State ---
 const roundTimeRemaining = ref(0);
@@ -285,217 +696,281 @@ const isRoundTimerActive = ref(false);
 let roundTimerInterval = null;
 
 // --- Computed Properties ---
-const showRoundResults = computed(() => multiplayerStore.showRoundResultsSummary);
-const isLastRound = computed(() => gameStore.currentRoundNumber >= gameStore.MAX_ROUNDS);
+const showRoundResults = computed(
+    () => multiplayerStore.showRoundResultsSummary,
+);
+const isLastRound = computed(
+    () => gameStore.currentRoundNumber >= gameStore.MAX_ROUNDS,
+);
 const currentLocation = computed(() => gameStore.getCurrentLocation);
+
 const getCurrentUserSession = computed(() => {
-  const currentUserId = authStore.userProfile?.id;
-  return currentUserId ? multiplayerStore.players.find(p => p.userId === currentUserId) : null;
+    const currentUserId = authStore.userProfile?.id;
+    return currentUserId
+        ? multiplayerStore.players.find((p) => p.userId === currentUserId)
+        : null;
 });
+
 const getCurrentUserRoundResult = computed(() => {
-  const currentRoundNum = gameStore.currentRoundNumber;
-  const userId = authStore.userProfile?.id;
-  if (!userId || currentRoundNum <= 0 || !multiplayerStore.playerRoundResults[userId]) return null;
-  return multiplayerStore.playerRoundResults[userId][currentRoundNum - 1] || null;
+    const currentRoundNum = gameStore.currentRoundNumber;
+    const userId = authStore.userProfile?.id;
+    if (
+        !userId ||
+        currentRoundNum <= 0 ||
+        !multiplayerStore.playerRoundResults[userId]
+    )
+        return null;
+    return (
+        multiplayerStore.playerRoundResults[userId][currentRoundNum - 1] || null
+    );
 });
 
 const detailedPlayerResultsForCurrentRound = computed(() => {
-  if (!showRoundResults.value) return [];
-  const currentRoundNum = gameStore.currentRoundNumber;
-  return multiplayerStore.players
-    .map(player => {
-      const result = multiplayerStore.playerRoundResults[player.userId]?.[currentRoundNum - 1];
-      return {
-        userId: player.userId,
-        username: player.username,
-        roundScore: result?.score ?? 0,
-        distanceKm: result?.distanceKm ?? -1,
-        damageTaken: result?.damageTaken ?? 0,
-        currentHealth: player.currentHealth,
-        status: player.status,
-      };
-    })
-    .sort((a, b) => b.roundScore - a.roundScore);
+    if (!showRoundResults.value) return [];
+    const currentRoundNum = gameStore.currentRoundNumber;
+    return multiplayerStore.players
+        .map((player) => {
+            const result =
+                multiplayerStore.playerRoundResults[player.userId]?.[
+                    currentRoundNum - 1
+                ];
+            return {
+                userId: player.userId,
+                username: player.username,
+                roundScore: result?.score ?? 0,
+                distanceKm: result?.distanceKm ?? -1,
+                damageTaken: result?.damageTaken ?? 0,
+                currentHealth: player.currentHealth,
+                status: player.status,
+            };
+        })
+        .sort((a, b) => b.roundScore - a.roundScore);
 });
 
 const roundWinnerUsername = computed(() => {
-  if (!showRoundResults.value || !multiplayerStore.currentRoundWinnerId) return "N/A";
-  const winner = multiplayerStore.players.find(p => p.userId === multiplayerStore.currentRoundWinnerId);
-  return winner?.username || "Unknown";
-});
-const roundWinnerScore = computed(() => {
-  if (!showRoundResults.value || !multiplayerStore.currentRoundWinnerId) return 0;
-  const winnerResult = detailedPlayerResultsForCurrentRound.value.find(p => p.userId === multiplayerStore.currentRoundWinnerId);
-  return winnerResult?.roundScore || 0;
+    if (!showRoundResults.value || !multiplayerStore.currentRoundWinnerId)
+        return "N/A";
+    const winner = multiplayerStore.players.find(
+        (p) => p.userId === multiplayerStore.currentRoundWinnerId,
+    );
+    return winner?.username || "Unknown";
 });
 
+const roundWinnerScore = computed(() => {
+    if (!showRoundResults.value || !multiplayerStore.currentRoundWinnerId)
+        return 0;
+    const winnerResult = detailedPlayerResultsForCurrentRound.value.find(
+        (p) => p.userId === multiplayerStore.currentRoundWinnerId,
+    );
+    return winnerResult?.roundScore || 0;
+});
 
 // --- Methods ---
 function handleMapGuess(coordinates) {
-  if (!gameStore.isRoundActive || multiplayerStore.isWaitingForRoundEnd || showRoundResults.value) return;
-  gameStore.recordGuess(coordinates);
+    if (
+        !gameStore.isRoundActive ||
+        multiplayerStore.isWaitingForRoundEnd ||
+        showRoundResults.value
+    )
+        return;
+    gameStore.recordGuess(coordinates);
 }
 
 function submitGuessHandler() {
-  if (!gameStore.currentGuess || !gameStore.isRoundActive || multiplayerStore.isWaitingForRoundEnd || showRoundResults.value) return;
-  multiplayerStore.submitGuess();
+    if (
+        !gameStore.currentGuess ||
+        !gameStore.isRoundActive ||
+        multiplayerStore.isWaitingForRoundEnd ||
+        showRoundResults.value
+    )
+        return;
+    multiplayerStore.submitGuess();
 }
 
 function handleHostProceed() {
-  if (!multiplayerStore.isHost) {
-    console.warn("Non-host attempted to control round progression.");
-    return;
-  }
-  console.log("Host action: handleHostProceed. Is last round:", isLastRound.value);
-  multiplayerStore.hostProceedToNextRound();
-  // UI changes (hiding results, map reset) will be triggered by server's 'round_start' or 'game_end'
+    if (!multiplayerStore.isHost || isAdvancing.value) {
+        console.warn("Cannot proceed: Non-host or already advancing.");
+        return;
+    }
+    isAdvancing.value = true;
+    console.log(
+        "Host action: handleHostProceed. Is last round:",
+        isLastRound.value,
+    );
+    multiplayerStore.hostProceedToNextRound();
 }
 
-
 function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function startRoundTimer(duration) {
-  console.log(`MultiplayerGame: startRoundTimer called with duration ${duration}. isRoundTimerActive: ${isRoundTimerActive.value}`);
-  if (roundTimerInterval) clearInterval(roundTimerInterval);
-
-  roundTimeRemaining.value = duration;
-  if (duration > 0 && isRoundTimerActive.value) {
-    roundTimerInterval = setInterval(() => {
-      if (!isRoundTimerActive.value) { clearInterval(roundTimerInterval); return; }
-      roundTimeRemaining.value--;
-      if (roundTimeRemaining.value <= 0) {
-        clearInterval(roundTimerInterval);
-        roundTimerInterval = null;
-      }
-    }, 1000);
-  }
+    if (roundTimerInterval) clearInterval(roundTimerInterval);
+    roundTimeRemaining.value = duration;
+    if (duration > 0 && isRoundTimerActive.value) {
+        roundTimerInterval = setInterval(() => {
+            if (!isRoundTimerActive.value) {
+                clearInterval(roundTimerInterval);
+                return;
+            }
+            roundTimeRemaining.value--;
+            if (roundTimeRemaining.value <= 0) {
+                clearInterval(roundTimerInterval);
+                roundTimerInterval = null;
+            }
+        }, 1000);
+    }
 }
 
 function hasPlayerSubmittedGuessThisRound(userId) {
-  const currentRoundNum = gameStore.currentRoundNumber;
-  if (currentRoundNum <= 0) return false;
-  const playerResultsForRound = multiplayerStore.playerRoundResults[userId];
-  return playerResultsForRound?.[currentRoundNum - 1]?.guess !== undefined;
+    const currentRoundNum = gameStore.currentRoundNumber;
+    if (currentRoundNum <= 0) return false;
+    const playerResultsForRound = multiplayerStore.playerRoundResults[userId];
+    return playerResultsForRound?.[currentRoundNum - 1]?.guess !== undefined;
 }
 
 function getPlayerStatusClass(player) {
-  if (player.status === 'eliminated') return 'bg-red-700/30 text-red-300 opacity-70 line-through';
-  if (player.status === 'disconnected' || player.status === 'disconnected_ws') return 'bg-gray-600/30 text-gray-400 opacity-80';
+    if (player.status === "eliminated")
+        return "bg-red-500/10 border-red-500/20 text-red-400/70 line-through";
+    if (player.status === "disconnected" || player.status === "disconnected_ws")
+        return "bg-white/[0.03] border-white/[0.06] text-white/25";
 
-  if (multiplayerStore.isWaitingForRoundEnd || showRoundResults.value) {
-    return hasPlayerSubmittedGuessThisRound(player.userId) ? 'bg-green-500/30 text-green-300' : 'bg-gray-500/30 text-gray-300';
-  }
-  return gameStore.isRoundActive ? 'bg-yellow-500/30 text-yellow-300' : 'bg-gray-500/30 text-gray-300';
+    if (multiplayerStore.isWaitingForRoundEnd || showRoundResults.value) {
+        return hasPlayerSubmittedGuessThisRound(player.userId)
+            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+            : "bg-white/[0.05] border-white/[0.08] text-white/50";
+    }
+    return gameStore.isRoundActive
+        ? "bg-[#D36040]/[0.08] border-[#D36040]/20 text-[#D36040]/80"
+        : "bg-white/[0.04] border-white/[0.07] text-white/40";
 }
 
 function toggleSettings() {
-  showSettings.value = !showSettings.value;
+    showSettings.value = !showSettings.value;
 }
-
 
 // --- Lifecycle and Watchers ---
 onMounted(() => {
-  console.log("MultiplayerGame mounted. GameID:", multiplayerStore.gameId);
-  if (!multiplayerStore.gameId || (!gameStore.gameId && gameStore.locations.length === 0)) {
-    router.push('/multiplayer/lobby');
-    return;
-  }
-  isMapFullscreen.value = showRoundResults.value;
+    if (
+        !multiplayerStore.gameId ||
+        (!gameStore.gameId && gameStore.locations.length === 0)
+    ) {
+        router.push("/multiplayer/lobby");
+        return;
+    }
+    isMapFullscreen.value = showRoundResults.value;
 
-  if (gameStore.isRoundActive &&
-    multiplayerStore.firstPlayerGuessedInRound &&
-    !multiplayerStore.isWaitingForRoundEnd &&
-    !showRoundResults.value &&
-    multiplayerStore.roundDurationSeconds > 0) {
-    isRoundTimerActive.value = true;
-    startRoundTimer(multiplayerStore.roundDurationSeconds);
-  } else if (gameStore.isRoundActive && !multiplayerStore.firstPlayerGuessedInRound) {
-    isRoundTimerActive.value = true; // Timer display is active, but not counting yet
-    roundTimeRemaining.value = multiplayerStore.roundDurationSeconds; // Show full time
-  }
+    if (
+        gameStore.isRoundActive &&
+        multiplayerStore.firstPlayerGuessedInRound &&
+        !multiplayerStore.isWaitingForRoundEnd &&
+        !showRoundResults.value &&
+        multiplayerStore.roundDurationSeconds > 0
+    ) {
+        isRoundTimerActive.value = true;
+        startRoundTimer(multiplayerStore.roundDurationSeconds);
+    } else if (
+        gameStore.isRoundActive &&
+        !multiplayerStore.firstPlayerGuessedInRound
+    ) {
+        isRoundTimerActive.value = true;
+        roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
+    }
 });
 
 onUnmounted(() => {
-  if (roundTimerInterval) clearInterval(roundTimerInterval);
+    if (roundTimerInterval) clearInterval(roundTimerInterval);
 });
 
-watch(() => gameStore.currentRoundNumber, (newRound, oldRound) => {
-  console.log(`MultiplayerGame watcher: Round changed to ${newRound}`);
-  if (newRound > 0 && newRound !== oldRound) {
-    if (roundTimerInterval) clearInterval(roundTimerInterval);
-    isRoundTimerActive.value = false; // Will be set true by firstPlayerGuessed watcher
-    roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
-    isMapFullscreen.value = false;
-    multiplayerStore.firstPlayerGuessedInRound = false;
-  }
-});
+watch(
+    () => gameStore.currentRoundNumber,
+    (newRound, oldRound) => {
+        if (newRound > 0 && newRound !== oldRound) {
+            if (roundTimerInterval) clearInterval(roundTimerInterval);
+            isRoundTimerActive.value = false;
+            roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
+            isMapFullscreen.value = false;
+            multiplayerStore.firstPlayerGuessedInRound = false;
+            isAdvancing.value = false;
+            mapDisplayRef.value?.resetMapState();
+        }
+    },
+);
+
+watch(
+    () => gameStore.isGameOver,
+    (isOver) => {
+        if (isOver) isAdvancing.value = false;
+    },
+);
 
 watch(showRoundResults, (isShowing) => {
-  console.log(`MultiplayerGame watcher: showRoundResults changed to ${isShowing}`);
-  isMapFullscreen.value = isShowing;
-  if (isShowing) {
-    if (roundTimerInterval) clearInterval(roundTimerInterval);
-    isRoundTimerActive.value = false;
-  }
+    isMapFullscreen.value = isShowing;
+    if (isShowing) {
+        if (roundTimerInterval) clearInterval(roundTimerInterval);
+        isRoundTimerActive.value = false;
+    }
 });
 
-watch(() => multiplayerStore.isWaitingForRoundEnd, (isWaiting) => {
-  console.log(`MultiplayerGame watcher: isWaitingForRoundEnd changed to ${isWaiting}`);
-  if (isWaiting) {
-    if (roundTimerInterval) clearInterval(roundTimerInterval);
-    isRoundTimerActive.value = false;
-  }
-});
+watch(
+    () => multiplayerStore.isWaitingForRoundEnd,
+    (isWaiting) => {
+        if (isWaiting) {
+            if (roundTimerInterval) clearInterval(roundTimerInterval);
+            isRoundTimerActive.value = false;
+        }
+    },
+);
 
-watch(() => multiplayerStore.firstPlayerGuessedInRound, (firstGuessed) => {
-  console.log(`MultiplayerGame watcher: firstPlayerGuessedInRound changed to ${firstGuessed}`);
-  if (firstGuessed &&
-    gameStore.isRoundActive &&
-    !multiplayerStore.isWaitingForRoundEnd &&
-    !showRoundResults.value &&
-    multiplayerStore.roundDurationSeconds > 0) {
-    console.log("First player guessed, starting round timer.");
-    isRoundTimerActive.value = true;
-    startRoundTimer(multiplayerStore.roundDurationSeconds);
-  } else if (!firstGuessed) {
-    if (roundTimerInterval) clearInterval(roundTimerInterval);
-    isRoundTimerActive.value = gameStore.isRoundActive; // Show timer UI if round is active
-    roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
-  }
-});
+watch(
+    () => multiplayerStore.firstPlayerGuessedInRound,
+    (firstGuessed) => {
+        if (
+            firstGuessed &&
+            gameStore.isRoundActive &&
+            !multiplayerStore.isWaitingForRoundEnd &&
+            !showRoundResults.value &&
+            multiplayerStore.roundDurationSeconds > 0
+        ) {
+            isRoundTimerActive.value = true;
+            startRoundTimer(multiplayerStore.roundDurationSeconds);
+        } else if (!firstGuessed) {
+            if (roundTimerInterval) clearInterval(roundTimerInterval);
+            isRoundTimerActive.value = gameStore.isRoundActive;
+            roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
+        }
+    },
+);
 
-watch(() => gameStore.isRoundActive, (isActive) => {
-  console.log(`MultiplayerGame watcher: gameStore.isRoundActive changed to ${isActive}`);
-  if (!isActive) {
-    if (roundTimerInterval) clearInterval(roundTimerInterval);
-    isRoundTimerActive.value = false;
-  } else {
-    // When round becomes active (e.g. new round starts)
-    // Timer display should be active, but not necessarily counting down yet
-    isRoundTimerActive.value = true;
-    roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
-    // The actual countdown will start when firstPlayerGuessedInRound becomes true
-  }
-});
-
+watch(
+    () => gameStore.isRoundActive,
+    (isActive) => {
+        if (!isActive) {
+            if (roundTimerInterval) clearInterval(roundTimerInterval);
+            isRoundTimerActive.value = false;
+        } else {
+            isRoundTimerActive.value = true;
+            roundTimeRemaining.value = multiplayerStore.roundDurationSeconds;
+        }
+    },
+);
 </script>
 
 <style scoped>
 .map-container :deep(.leaflet-container) {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
-/* Smooth transition for player status bar items */
-.player-status-bar>div>div {
-  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, opacity 0.3s ease-in-out;
+.toast-enter-active,
+.toast-leave-active {
+    transition: all 0.3s ease;
 }
-
-.max-w-\[100px\] {
-  max-width: 100px;
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translate(-50%, -12px);
 }
 </style>

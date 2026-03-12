@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router' // Import the router
 import './style.css'
+import '@fontsource/playfair-display/400-italic.css' // Import Playfair Display Italic
 import App from './App.vue'
 
 const pinia = createPinia()

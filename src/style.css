@@ -1,21 +1,59 @@
-/* src/style.css */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital@1&display=swap");
+@import "leaflet/dist/leaflet.css";
+@import "tailwindcss";
 
-/* Import external CSS first (like Leaflet) */
-@import 'leaflet/dist/leaflet.css';
-
-/* Import Tailwind CSS - this replaces @tailwind base/components/utilities */
-@import 'tailwindcss';
-
-/* Add any custom base styles or @layer overrides below */
-body {
-  font-family: sans-serif; /* Example */
-  /* You can still use @apply here if needed, but prefer utility classes in templates */
-  /* @apply bg-gray-100 text-gray-900; */
+@layer base {
+    body {
+        font-family:
+            "Inter",
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            sans-serif;
+        @apply bg-[#09090B] text-white antialiased;
+    }
 }
 
-/* Example of adding custom utility */
-@layer utilities {
-  .custom-utility-example {
-    @apply text-blue-500 font-bold;
-  }
+/* ── Page transitions ─────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+    transition:
+        opacity 0.22s ease,
+        transform 0.22s ease;
+}
+.page-enter-from,
+.page-leave-to {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+/* ── Custom scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Leaflet map overrides ────────────────────────────── */
+.leaflet-container {
+    height: 100%;
+    width: 100%;
+    background-color: #111117;
+}
+.leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    font-size: 10px !important;
+}
+.leaflet-control-attribution a {
+    color: rgba(255, 255, 255, 0.4) !important;
 }

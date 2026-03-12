@@ -1,73 +1,125 @@
-import axios from 'axios';
-import { useAuthStore } from '../stores/AuthStore';
+import axios from "axios";
+import { useAuthStore } from "../stores/AuthStore";
+import router from "../router/index";
 
 const baseUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const apiClient = axios.create({
   baseURL: `${baseUrl}/api/v1`,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  // Add CORS configuration
   withCredentials: true,
-  credentials: 'include'
+  credentials: "include",
 });
 
-// Interceptors (Optional but useful for centralized logging/error handling)
+// ---------------------------------------------------------------------------
+// Request interceptor – attach the Bearer token to every outgoing request.
+// If the stored token is already expired, bail out early: log the user out
+// and redirect to /login without even hitting the network.
+// ---------------------------------------------------------------------------
 apiClient.interceptors.request.use(
   (config) => {
-    // --- Add Auth Token ---
-    const authStore = useAuthStore(); // Get store instance
-    const token = authStore.authToken; // Use getter
+    const authStore = useAuthStore();
+
+    // Proactive expiry check – avoid a round-trip we know will fail.
+    if (authStore.isTokenExpired) {
+      console.warn("gameService: stored token is expired. Logging out.");
+      authStore.logout();
+      router.push("/login");
+      // Abort the request by returning a rejected promise.
+      return Promise.reject(new Error("Token expired"));
+    }
+
+    const token = authStore.authToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Attaching Auth Token to request');
     }
-    // ----------------------
-    console.log('Starting API Request:', config.method.toUpperCase(), config.url, config.params || '');
+
+    console.log(
+      "Starting API Request:",
+      config.method.toUpperCase(),
+      config.url,
+      config.params || "",
+    );
     return config;
   },
   (error) => {
-    console.error('API Request Error:', error);
+    console.error("API Request Error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
+// ---------------------------------------------------------------------------
+// Response interceptor – handle 401 Unauthorized responses reactively.
+// This catches cases where the server rejects the token (expired, revoked,
+// tampered, etc.) even if our local expiry check passed (e.g. clock skew).
+// ---------------------------------------------------------------------------
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('API Response Status:', response.status, response.config.url);
-    return response; // Pass through successful responses
+    console.log("API Response Status:", response.status, response.config.url);
+    return response;
   },
   (error) => {
-    console.error('API Response Error:', error.response?.status, error.response?.data || error.message);
-    // Handle common errors centrally if needed (e.g., 401 Unauthorized -> redirect to login)
-    return Promise.reject(error); // Pass through errors
-  }
+    const status = error.response?.status;
+    console.error(
+      "API Response Error:",
+      status,
+      error.response?.data || error.message,
+    );
+
+    if (status === 401) {
+      console.warn(
+        "gameService: received 401 – token rejected by server. Logging out.",
+      );
+      const authStore = useAuthStore();
+      authStore.logout();
+      // Only redirect if we are not already on /login to avoid redirect loops.
+      if (router.currentRoute.value.name !== "Login") {
+        router.push("/login");
+      }
+    }
+
+    return Promise.reject(error);
+  },
 );
 
-
-// Define API functions
+// ---------------------------------------------------------------------------
+// API methods
+// ---------------------------------------------------------------------------
 export default {
   /**
    * Starts a new game by fetching random locations from the backend.
-   * @param {number} [rounds=5] - Optional number of rounds to request.
-   * @returns {Promise<object>} - Promise resolving with { gameId: string, locations: Array<{id: number, lat: number, lng: number}> }
+   * @param {number} [rounds=5] - Number of rounds to request.
+   * @returns {Promise<{ gameId: string, locations: Array<{ id: number, lat: number, lng: number }> }>}
    */
   async startGame(rounds = 5) {
     try {
-      const response = await apiClient.get('/game/start', {
-        params: { rounds } // Send 'rounds' as a query parameter
+      const response = await apiClient.get("/game/start", {
+        params: { rounds },
       });
-      // Axios automatically parses JSON, response.data contains the body
       return response.data;
     } catch (error) {
-      // Logged by interceptor, re-throw to be handled by caller (Pinia store)
-      console.error('Error in gameService.startGame:', error);
-      throw error; // Re-throw the error so the calling action knows it failed
+      console.error("Error in gameService.startGame:", error);
+      throw error;
     }
   },
 
-  // Add other game-related API calls here later
-  // async submitGuess(gameId, roundData) { ... }
-  // async getGameResults(gameId) { ... }
+  /**
+   * Submits the completed game results to the backend.
+   * @param {object} gameResult
+   * @param {number} gameResult.totalScore
+   * @param {number} gameResult.roundsPlayed
+   * @param {Array}  gameResult.rounds
+   * @returns {Promise<object>}
+   */
+  async finishGame(gameResult) {
+    try {
+      const response = await apiClient.post("/game/finish", gameResult);
+      return response.data;
+    } catch (error) {
+      console.error("Error in gameService.finishGame:", error);
+      throw error;
+    }
+  },
 };

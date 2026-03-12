@@ -1,302 +1,612 @@
 <template>
-  <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
-    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Multiplayer Lobby</h1>
-      <div v-if="multiplayerStore.gameCode" class="bg-blue-100 dark:bg-blue-900 px-4 py-2 rounded-lg flex items-center">
-        <span class="text-sm text-gray-700 dark:text-gray-300 mr-2">Game Code:</span>
-        <span class="font-mono font-bold text-lg text-blue-600 dark:text-blue-400 tracking-wider">{{
-          multiplayerStore.gameCode }}</span>
-        <button @click="copyGameCode" title="Copy Game Code"
-          class="ml-3 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        </button>
-      </div>
-    </div>
+    <div class="min-h-screen bg-[#09090B] pt-20 pb-12 px-4 md:px-6">
+        <div class="max-w-5xl mx-auto">
+            <!-- Header -->
+            <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+            >
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span
+                            class="w-1.5 h-1.5 rounded-full bg-[#D36040] animate-pulse"
+                        ></span>
+                        <span
+                            class="text-xs text-[#D36040] font-medium tracking-[0.2em] uppercase"
+                            >Multiplayer Lobby</span
+                        >
+                    </div>
+                    <h1
+                        class="text-2xl font-semibold text-white tracking-tight"
+                    >
+                        Waiting for players
+                    </h1>
+                </div>
 
-    <!-- Status & Error Display -->
-    <div class="mb-4 p-3 rounded-md text-center" :class="connectionStatusClass">
-      <p class="font-medium">{{ connectionStatusText }}</p>
-    </div>
-    <div v-if="multiplayerStore.error && !multiplayerStore.isConnected"
-      class="mb-4 text-red-600 text-sm p-3 bg-red-50 rounded border border-red-200 flex justify-between items-center">
-      <span>Connection Error: {{ multiplayerStore.error }}</span>
-      <button @click="multiplayerStore.connect()"
-        class="ml-2 text-blue-600 text-sm underline font-medium">Retry</button>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Players List -->
-      <div class="md:col-span-2">
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 min-h-[300px]">
-          <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
-            Players ({{ multiplayerStore.players.length }} / ?) <!-- TODO: Get max players -->
-          </h2>
-          <div class="space-y-3">
-            <!-- Player Item -->
-            <div v-for="player in multiplayerStore.players" :key="player.userId"
-              class="flex items-center justify-between bg-white dark:bg-gray-600 p-3 rounded-md shadow-sm"
-              :class="{ 'ring-2 ring-blue-500': player.userId === authStore.userProfile?.id }">
-              <div class="flex items-center">
+                <!-- Room code badge -->
                 <div
-                  class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                  {{ player.username?.charAt(0)?.toUpperCase() || '?' }}
+                    v-if="multiplayerStore.gameCode"
+                    class="flex items-center gap-3 px-5 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl"
+                >
+                    <div>
+                        <p
+                            class="text-[10px] text-white/30 uppercase tracking-widest mb-0.5"
+                        >
+                            Room Code
+                        </p>
+                        <p
+                            class="font-mono text-xl font-semibold text-[#D36040] tracking-[0.3em]"
+                        >
+                            {{ multiplayerStore.gameCode }}
+                        </p>
+                    </div>
+                    <button
+                        @click="copyGameCode"
+                        class="p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-white/40 hover:text-white transition-all"
+                        title="Copy room code"
+                    >
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.5"
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                        </svg>
+                    </button>
                 </div>
-                <div class="ml-3 overflow-hidden">
-                  <span class="font-medium text-gray-800 dark:text-white block truncate" :title="player.username">{{
-                    player.username || 'Joining...' }}</span>
-                  <span v-if="player.userId === authStore.userProfile?.id"
-                    class="text-xs text-blue-600 dark:text-blue-400">(You)</span>
-                  <span v-if="player.isHost" class="ml-1 text-xs text-yellow-600 dark:text-yellow-400 font-semibold">⭐
-                    Host</span>
+            </div>
+
+            <!-- Connection status banner -->
+            <div
+                class="mb-6 px-4 py-3 rounded-xl border text-sm flex items-center gap-3 transition-all"
+                :class="connectionStatusClass"
+            >
+                <span
+                    class="w-2 h-2 rounded-full flex-shrink-0"
+                    :class="
+                        multiplayerStore.isConnected
+                            ? 'bg-emerald-400 shadow-sm shadow-emerald-400/60'
+                            : 'bg-yellow-400 animate-pulse'
+                    "
+                ></span>
+                <p class="font-medium">{{ connectionStatusText }}</p>
+            </div>
+
+            <!-- Error banner -->
+            <div
+                v-if="multiplayerStore.error && !multiplayerStore.isConnected"
+                class="mb-6 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/[0.07] text-sm flex items-center justify-between gap-4"
+            >
+                <div class="flex items-center gap-2.5">
+                    <svg
+                        class="w-4 h-4 text-red-400 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    <p class="text-red-400">{{ multiplayerStore.error }}</p>
                 </div>
-              </div>
-              <div class="flex items-center flex-shrink-0">
-                <span v-if="player.isReady"
-                  class="text-green-500 dark:text-green-400 flex items-center text-sm font-medium">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Ready
-                </span>
-                <span v-else class="text-gray-400 dark:text-gray-300 flex items-center text-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Not Ready
-                </span>
-              </div>
+                <button
+                    @click="multiplayerStore.connect()"
+                    class="text-xs text-white/50 hover:text-white underline transition-colors flex-shrink-0"
+                >
+                    Retry
+                </button>
             </div>
-            <div v-if="multiplayerStore.players.length === 0 && multiplayerStore.isConnected"
-              class="text-center py-10 text-gray-500 dark:text-gray-400">
-              Waiting for players... Share the code!
+
+            <!-- Main grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Players list (2/3 width) -->
+                <div
+                    class="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden"
+                >
+                    <div
+                        class="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between"
+                    >
+                        <h2 class="text-sm font-medium text-white/60">
+                            Players
+                            <span
+                                class="ml-2 px-2 py-0.5 bg-white/[0.06] rounded-full text-xs text-white/40"
+                            >
+                                {{ multiplayerStore.players.length }}
+                            </span>
+                        </h2>
+                        <!-- Player dots indicator -->
+                        <div class="flex gap-1.5">
+                            <span
+                                v-for="i in 6"
+                                :key="i"
+                                class="w-2 h-2 rounded-full transition-colors duration-300"
+                                :class="
+                                    i <= multiplayerStore.players.length
+                                        ? 'bg-[#D36040]/70'
+                                        : 'bg-white/[0.08]'
+                                "
+                            >
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 space-y-2 min-h-[320px]">
+                        <!-- Player item -->
+                        <div
+                            v-for="player in multiplayerStore.players"
+                            :key="player.userId"
+                            class="flex items-center justify-between p-4 rounded-xl border transition-all"
+                            :class="
+                                player.userId === authStore.userProfile?.id
+                                    ? 'bg-[#D36040]/[0.06] border-[#D36040]/20'
+                                    : 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04]'
+                            "
+                        >
+                            <div class="flex items-center gap-3.5">
+                                <!-- Avatar -->
+                                <div
+                                    class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold flex-shrink-0 select-none"
+                                    :class="
+                                        player.userId ===
+                                        authStore.userProfile?.id
+                                            ? 'bg-[#D36040]/15 border border-[#D36040]/30 text-[#D36040]'
+                                            : 'bg-white/[0.06] border border-white/[0.08] text-white/60'
+                                    "
+                                >
+                                    {{
+                                        player.username
+                                            ?.charAt(0)
+                                            ?.toUpperCase() || "?"
+                                    }}
+                                </div>
+
+                                <!-- Name & badges -->
+                                <div>
+                                    <div
+                                        class="flex items-center gap-2 flex-wrap"
+                                    >
+                                        <span
+                                            class="text-sm font-medium text-white"
+                                        >
+                                            {{ player.username || "Joining…" }}
+                                        </span>
+                                        <span
+                                            v-if="
+                                                player.userId ===
+                                                authStore.userProfile?.id
+                                            "
+                                            class="text-[10px] px-2 py-0.5 rounded-full bg-[#D36040]/10 border border-[#D36040]/25 text-[#D36040] font-medium"
+                                        >
+                                            You
+                                        </span>
+                                        <span
+                                            v-if="player.isHost"
+                                            class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium"
+                                        >
+                                            Host
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ready status -->
+                            <div class="flex items-center gap-2">
+                                <div
+                                    v-if="player.isReady"
+                                    class="flex items-center gap-1.5 text-emerald-400"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2.5"
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    <span class="text-xs font-medium"
+                                        >Ready</span
+                                    >
+                                </div>
+                                <div
+                                    v-else
+                                    class="flex items-center gap-1.5 text-white/25"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="1.5"
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                        />
+                                    </svg>
+                                    <span class="text-xs">Waiting</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div
+                            v-if="
+                                multiplayerStore.players.length === 0 &&
+                                multiplayerStore.isConnected
+                            "
+                            class="flex flex-col items-center justify-center py-16 text-center"
+                        >
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-4"
+                            >
+                                <svg
+                                    class="w-7 h-7 text-white/15"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="1.5"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <p class="text-sm text-white/30">
+                                Waiting for players to join…
+                            </p>
+                            <p class="text-xs text-white/20 mt-1">
+                                Share the room code to invite friends
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar: Chat + Controls -->
+                <div class="flex flex-col gap-4">
+                    <!-- Chat -->
+                    <div
+                        class="flex-1 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden flex flex-col"
+                        style="min-height: 260px; max-height: 340px"
+                    >
+                        <div class="px-5 py-4 border-b border-white/[0.06]">
+                            <h2
+                                class="text-sm font-medium text-white/60 flex items-center gap-2"
+                            >
+                                <svg
+                                    class="w-3.5 h-3.5 text-white/25"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="1.5"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                    />
+                                </svg>
+                                Chat
+                            </h2>
+                        </div>
+
+                        <!-- Messages -->
+                        <div
+                            ref="chatBoxRef"
+                            class="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-thin"
+                        >
+                            <div
+                                v-for="(
+                                    message, index
+                                ) in multiplayerStore.chatMessages"
+                                :key="index"
+                            >
+                                <span
+                                    class="text-xs font-medium"
+                                    :class="
+                                        message.userId ===
+                                        authStore.userProfile?.id
+                                            ? 'text-[#D36040]'
+                                            : 'text-white/40'
+                                    "
+                                >
+                                    {{ message.username || "User" }}
+                                </span>
+                                <span
+                                    class="ml-2 text-sm text-white/70 break-words"
+                                    >{{ message.content }}</span
+                                >
+                            </div>
+                            <div
+                                v-if="
+                                    multiplayerStore.chatMessages.length === 0
+                                "
+                                class="text-center py-8 text-white/20 text-xs"
+                            >
+                                No messages yet
+                            </div>
+                        </div>
+
+                        <!-- Input -->
+                        <div class="p-3 border-t border-white/[0.06]">
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="chatInput"
+                                    type="text"
+                                    placeholder="Say something…"
+                                    class="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#D36040]/40 transition-all"
+                                    @keyup.enter="handleSendChatMessage"
+                                    :disabled="!multiplayerStore.isConnected"
+                                />
+                                <button
+                                    @click="handleSendChatMessage"
+                                    :disabled="
+                                        !multiplayerStore.isConnected ||
+                                        !chatInput.trim()
+                                    "
+                                    class="px-3 py-2 bg-[#D36040] hover:bg-[#b04a2e] disabled:bg-white/[0.05] disabled:text-white/20 text-white rounded-lg transition-all flex-shrink-0"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div
+                        class="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 space-y-3"
+                    >
+                        <!-- Ready toggle -->
+                        <button
+                            v-if="!multiplayerStore.isCurrentPlayerReady"
+                            @click="handleSetReady(true)"
+                            :disabled="!multiplayerStore.isConnected"
+                            class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600/80 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all text-sm"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2.5"
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                            Ready
+                        </button>
+                        <button
+                            v-else
+                            @click="handleSetReady(false)"
+                            :disabled="!multiplayerStore.isConnected"
+                            class="w-full flex items-center justify-center gap-2 py-3 bg-white/[0.06] hover:bg-white/[0.09] disabled:opacity-40 disabled:cursor-not-allowed border border-white/[0.08] text-white/70 font-medium rounded-xl transition-all text-sm"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                            Unready
+                        </button>
+
+                        <!-- Start game (host only) -->
+                        <button
+                            v-if="multiplayerStore.isHost"
+                            @click="handleStartGame"
+                            :disabled="!canStartGame"
+                            class="w-full flex items-center justify-center gap-2 py-3 bg-[#D36040] hover:bg-[#b04a2e] disabled:bg-white/[0.04] disabled:text-white/20 disabled:border disabled:border-white/[0.07] disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all text-sm"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                />
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            Start Game
+                        </button>
+
+                        <!-- Leave -->
+                        <button
+                            @click="handleLeaveGame"
+                            class="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-white/30 hover:text-red-400 hover:bg-red-500/[0.07] border border-white/[0.05] hover:border-red-500/20 rounded-xl transition-all"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="1.5"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                />
+                            </svg>
+                            Leave Game
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
 
-      <!-- Chat and Controls -->
-      <div class="flex flex-col space-y-4">
-        <!-- Chat -->
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex-grow flex flex-col">
-          <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Chat</h2>
-          <div ref="chatBoxRef"
-            class="h-64 overflow-y-auto mb-3 bg-white dark:bg-gray-600 rounded-md p-3 space-y-2 flex-grow">
-            <!-- Chat Message -->
-            <div v-for="(message, index) in multiplayerStore.chatMessages" :key="index" class="text-sm">
-              <span class="font-semibold text-gray-700 dark:text-gray-300"
-                :class="{ 'text-blue-600 dark:text-blue-400': message.userId === authStore.userProfile?.id }">{{
-                  message.username || 'User' }}:</span>
-              <span class="ml-1 text-gray-800 dark:text-white break-words">{{ message.content }}</span>
+        <!-- Copy toast -->
+        <transition name="page">
+            <div
+                v-if="showCopyConfirm"
+                class="fixed bottom-6 right-6 flex items-center gap-2.5 px-4 py-3 bg-[#111117] border border-white/[0.1] rounded-xl shadow-2xl text-sm text-white z-50"
+            >
+                <svg
+                    class="w-4 h-4 text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2.5"
+                        d="M5 13l4 4L19 7"
+                    />
+                </svg>
+                Room code copied!
             </div>
-            <div v-if="multiplayerStore.chatMessages.length === 0"
-              class="text-gray-400 dark:text-gray-300 text-center italic py-10">
-              No messages yet. Say hi!
-            </div>
-          </div>
-          <div class="flex">
-            <input v-model="chatInput" type="text" placeholder="Type a message..."
-              class="flex-grow px-3 py-2 text-sm rounded-l-md border dark:bg-gray-600 dark:border-gray-500 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-              @keyup.enter="handleSendChatMessage" :disabled="!multiplayerStore.isConnected" />
-            <button @click="handleSendChatMessage" :disabled="!multiplayerStore.isConnected || !chatInput.trim()"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-r-md text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              Send
-            </button>
-          </div>
-        </div>
-
-        <!-- Controls -->
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-          <div class="flex flex-col space-y-3">
-            <button v-if="!multiplayerStore.isCurrentPlayerReady" @click="handleSetReady(true)"
-              :disabled="!multiplayerStore.isConnected"
-              class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-medium disabled:opacity-50">
-              Mark as Ready
-            </button>
-            <button v-else @click="handleSetReady(false)" :disabled="!multiplayerStore.isConnected"
-              class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-md font-medium disabled:opacity-50">
-              Cancel Ready
-            </button>
-
-            <!-- Start Game Button (Explicit Checks) -->
-            <button v-if="multiplayerStore.isHost" @click="handleStartGame" :disabled="!canStartGame"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-              Start Game
-              <!-- Dynamic feedback message -->
-              <span v-if="!multiplayerStore.isConnected"> (Disconnected)</span>
-              <span v-else-if="multiplayerStore.players.length < 2"> (Waiting for more players...)</span>
-              <!-- Adjust min players if needed -->
-              <span v-else-if="!multiplayerStore.isEveryoneReady"> (Waiting for players to ready...)</span>
-            </button>
-
-            <button @click="handleLeaveGame"
-              class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-md font-medium">
-              Leave Lobby
-            </button>
-          </div>
-        </div>
-      </div>
+        </transition>
     </div>
-
-    <!-- Copy Confirmation -->
-    <div v-if="showCopyConfirm"
-      class="fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-2 rounded-md shadow-lg text-sm transition-opacity duration-300"
-      :class="showCopyConfirm ? 'opacity-100' : 'opacity-0'">
-      Game Code Copied!
-    </div>
-
-  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMultiplayerStore } from '../stores/MultiplayerStore';
-import { useAuthStore } from '../stores/AuthStore'; // Need for current user ID
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import { useMultiplayerStore } from "../stores/MultiplayerStore";
+import { useAuthStore } from "../stores/AuthStore";
 
 const router = useRouter();
 const multiplayerStore = useMultiplayerStore();
 const authStore = useAuthStore();
-const chatInput = ref('');
-const chatBoxRef = ref(null); // For auto-scrolling chat
+const chatInput = ref("");
+const chatBoxRef = ref(null);
 const showCopyConfirm = ref(false);
 
 const connectionStatusText = computed(() => {
-  if (multiplayerStore.isConnected) return "Connected to Lobby";
-  if (multiplayerStore.error && !multiplayerStore.isConnected) return "Connection Failed"; // Error shown below
-  return "Connecting...";
+    if (multiplayerStore.isConnected)
+        return "Connected — waiting for all players to ready up";
+    if (multiplayerStore.error && !multiplayerStore.isConnected)
+        return "Connection failed";
+    return "Connecting to room…";
 });
 
 const connectionStatusClass = computed(() => {
-  if (multiplayerStore.isConnected) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-  if (multiplayerStore.error && !multiplayerStore.isConnected) return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-  return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 animate-pulse";
+    if (multiplayerStore.isConnected)
+        return "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400";
+    if (multiplayerStore.error && !multiplayerStore.isConnected)
+        return "border-red-500/20 bg-red-500/[0.06] text-red-400";
+    return "border-yellow-500/20 bg-yellow-500/[0.06] text-yellow-400 animate-pulse";
 });
 
 const canStartGame = computed(() => {
-  // Must be connected
-  if (!multiplayerStore.isConnected) return false;
-  // Must be the host (redundant check as button isn't shown otherwise, but safe)
-  if (!multiplayerStore.isHost) return false;
-  // Must have enough players (e.g., minimum 2, adjust if allowing solo start for test)
-  if (multiplayerStore.players.length < 1) return false; // Change to 2 for actual multiplayer
-  // Everyone present must be ready
-  return multiplayerStore.isEveryoneReady; // Use the existing computed property from store
+    if (!multiplayerStore.isConnected) return false;
+    if (!multiplayerStore.isHost) return false;
+    if (multiplayerStore.players.length < 1) return false;
+    return multiplayerStore.isEveryoneReady;
 });
 
 function copyGameCode() {
-  if (!multiplayerStore.gameCode) return;
-  navigator.clipboard.writeText(multiplayerStore.gameCode)
-    .then(() => {
-      showCopyConfirm.value = true;
-      setTimeout(() => { showCopyConfirm.value = false; }, 2000); // Hide after 2 seconds
-    })
-    .catch(err => {
-      console.error('Failed to copy game code: ', err);
-      // Optionally show an error message
-    });
+    if (!multiplayerStore.gameCode) return;
+    navigator.clipboard
+        .writeText(multiplayerStore.gameCode)
+        .then(() => {
+            showCopyConfirm.value = true;
+            setTimeout(() => {
+                showCopyConfirm.value = false;
+            }, 2000);
+        })
+        .catch((err) => console.error("Failed to copy game code: ", err));
 }
 
 function handleSetReady(isReady) {
-  multiplayerStore.setReady(isReady);
+    multiplayerStore.setReady(isReady);
 }
 
 function handleSendChatMessage() {
-  multiplayerStore.sendChatMessage(chatInput.value);
-  chatInput.value = ''; // Clear input after sending
+    multiplayerStore.sendChatMessage(chatInput.value);
+    chatInput.value = "";
 }
 
 function handleStartGame() {
-  if (canStartGame.value) { // Use the computed property
-    console.log("Host clicking Start Game button...");
-    multiplayerStore.hostStartGame(); // <<< CALL THE STORE ACTION
-    // Navigation will happen automatically when 'game_start' is received
-  } else {
-    console.warn("Start game clicked but conditions not met.");
-    multiplayerStore.error = "Cannot start game yet."; // Provide feedback
-    setTimeout(() => { multiplayerStore.error = null }, 3000);
-  }
+    if (canStartGame.value) {
+        console.log("Host clicking Start Game button…");
+        multiplayerStore.hostStartGame();
+    } else {
+        console.warn("Start game clicked but conditions not met.");
+        multiplayerStore.error = "Cannot start game yet.";
+        setTimeout(() => {
+            multiplayerStore.error = null;
+        }, 3000);
+    }
 }
 
 function handleLeaveGame() {
-  multiplayerStore.leaveGame(); // Disconnects and clears state
-  router.push('/'); // Navigate home
+    multiplayerStore.leaveGame();
+    router.push("/");
 }
 
-// Auto-scroll chat
-watch(() => multiplayerStore.chatMessages, async () => {
-  await nextTick(); // Wait for DOM update
-  const chatBox = chatBoxRef.value;
-  if (chatBox) {
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-}, { deep: true });
-
+watch(
+    () => multiplayerStore.chatMessages,
+    async () => {
+        await nextTick();
+        const chatBox = chatBoxRef.value;
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    },
+    { deep: true },
+);
 
 onMounted(() => {
-  if (!multiplayerStore.gameCode || !multiplayerStore.gameId) {
-    console.warn("Landed in lobby without game context, redirecting home.");
-    router.push('/');
-    return;
-  }
-  if (!multiplayerStore.isConnected) {
-    multiplayerStore.connect();
-  }
-  // Scroll chat to bottom initially if messages already exist (e.g., reconnect)
-  nextTick(() => {
-    const chatBox = chatBoxRef.value;
-    if (chatBox) {
-      chatBox.scrollTop = chatBox.scrollHeight;
+    if (!multiplayerStore.gameCode || !multiplayerStore.gameId) {
+        console.warn("Landed in lobby without game context, redirecting home.");
+        router.push("/");
+        return;
     }
-  });
+    if (!multiplayerStore.isConnected) {
+        multiplayerStore.connect();
+    }
+    nextTick(() => {
+        const chatBox = chatBoxRef.value;
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    });
 });
 
-// Decide if you want to disconnect on component leave
-onUnmounted(() => {
-  // Typically, you DON'T disconnect just by leaving the lobby component view
-  // unless the user explicitly clicked "Leave Game". The connection should persist
-  // if they are just navigating within the app briefly.
-  // If the user navigates completely away (e.g., back button to / ), the `leaveGame` action should be called.
-  // Consider adding a global navigation guard (`router.beforeEach`) or using
-  // `window.onbeforeunload` to prompt the user or automatically leave if they navigate away
-  // from multiplayer sections without using the leave button.
-});
+onUnmounted(() => {});
 </script>
-
-<style scoped>
-/* Simple scrollbar styling for chat */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 8px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-</style>

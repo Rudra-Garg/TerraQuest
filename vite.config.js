@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     tailwindcss()
   ],
-  base: '/TerraQuest/',
+  base: '/',
   build: {
     outDir: 'dist',
   }

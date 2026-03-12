@@ -1,179 +1,349 @@
 <template>
-    <div class="flex items-center justify-center min-h-[calc(100vh-200px)] py-12 px-4 sm:px-6 lg:px-8">
-        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-green-600 to-teal-700 px-6 py-8 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white mx-auto mb-4" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                <h2 class="text-2xl font-bold text-white">Create your TerraQuest Account</h2>
-                <p class="mt-2 text-sm text-green-200">
-                    Join the global geography challenge
+    <div
+        class="min-h-screen bg-[#09090B] flex items-center justify-center px-4 py-20 relative overflow-hidden"
+    >
+        <!-- Background dot pattern -->
+        <div
+            class="absolute inset-0 opacity-[0.025] pointer-events-none"
+            style="
+                background-image: radial-gradient(
+                    rgba(255, 255, 255, 0.8) 1px,
+                    transparent 1px
+                );
+                background-size: 28px 28px;
+            "
+        ></div>
+
+        <!-- Ambient glow -->
+        <div
+            class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#D36040]/5 rounded-full blur-[120px] pointer-events-none"
+        ></div>
+
+        <div class="relative z-10 w-full max-w-md">
+            <!-- Logo -->
+            <div class="flex flex-col items-center mb-10">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-[#D36040]/10 border border-[#D36040]/20 flex items-center justify-center mb-4"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6 text-[#D36040]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.5"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                </div>
+                <h1 class="text-xl font-semibold text-white tracking-wide">
+                    TerraQuest
+                </h1>
+                <p class="text-xs text-white/30 mt-1 tracking-wider">
+                    Geography Challenge
                 </p>
             </div>
 
-            <div class="px-6 py-8">
-                <form @submit.prevent="handleRegister" class="space-y-5">
-                    <!-- Username Field -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <!-- Icon Container with fixed width -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none w-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
-                            <input v-model="username" id="username" name="username" type="text" required minlength="3"
-                                class="block w-full pl-14 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                placeholder="Choose a username" />
-                        </div>
+            <!-- Success: Recovery Code Card -->
+            <div
+                v-if="registrationSuccess"
+                class="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm"
+            >
+                <!-- Success header -->
+                <div class="flex flex-col items-center text-center mb-8">
+                    <div
+                        class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4"
+                    >
+                        <svg
+                            class="w-7 h-7 text-emerald-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M5 13l4 4L19 7"
+                            />
+                        </svg>
                     </div>
+                    <h2 class="text-xl font-semibold text-white">
+                        Account Created
+                    </h2>
+                    <p class="text-sm text-white/40 mt-1.5 max-w-xs">
+                        Welcome to TerraQuest. Save your recovery code — it's
+                        the only way to reset your password.
+                    </p>
+                </div>
 
-                    <!-- Email Field -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <!-- Icon Container with fixed width -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none w-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                                </svg>
-                            </div>
-                            <input v-model="email" id="email" name="email" type="email" required
-                                class="block w-full pl-14 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                placeholder="you@example.com" />
+                <!-- Recovery code box -->
+                <div
+                    class="bg-[#09090B] border border-white/[0.08] rounded-xl p-5 mb-6"
+                >
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <svg
+                                class="w-4 h-4 text-amber-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
+                            </svg>
+                            <span
+                                class="text-xs font-medium text-amber-400 tracking-wide"
+                                >Save this code</span
+                            >
                         </div>
-                    </div>
-
-                    <!-- Password Field -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <div class="mt-1 relative rounded-md shadow-sm">
-                            <!-- Icon Container with fixed width -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none w-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <input v-model="password" id="password" name="password" type="password" required
-                                minlength="6"
-                                class="block w-full pl-14 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                placeholder="Create a password (min 6 characters)" />
-                        </div>
-                        <p class="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
-                    </div>
-
-                    <!-- Error Message Display -->
-                    <div v-if="authError" class="bg-red-50 border-l-4 border-red-400 p-4 my-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                    fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-red-700">{{ authError }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6">
-                        <button type="submit" :disabled="isLoading"
-                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
-                            <span v-if="isLoading" class="flex items-center">
-                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                                Creating account...
-                            </span>
-                            <span v-else>Create Account</span>
+                        <button
+                            @click="copyRecoveryCode"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-xs text-white/50 hover:text-white transition-all"
+                        >
+                            <svg
+                                class="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                            </svg>
+                            Copy
                         </button>
                     </div>
+                    <code
+                        class="block font-mono text-2xl text-[#D36040] tracking-[0.25em] text-center py-2"
+                    >
+                        {{ recoveryCode }}
+                    </code>
+                </div>
 
-                    <div class="text-center mt-6">
-                        <p class="text-sm text-gray-600">
-                            Already have an account?
-                            <router-link to="/login" class="font-medium text-green-600 hover:text-green-500 ml-1">
-                                Sign in
-                            </router-link>
-                        </p>
+                <p
+                    class="text-xs text-white/25 text-center mb-6 leading-relaxed"
+                >
+                    We don't use email recovery. This code is the only way to
+                    reset your password if you forget it.
+                </p>
+
+                <router-link
+                    to="/login"
+                    class="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-all text-sm"
+                >
+                    Continue to Sign In
+                    <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                        />
+                    </svg>
+                </router-link>
+            </div>
+
+            <!-- Registration Form Card -->
+            <div
+                v-else
+                class="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm"
+            >
+                <div class="mb-8">
+                    <h2 class="text-2xl font-semibold text-white">
+                        Create account
+                    </h2>
+                    <p class="text-sm text-white/40 mt-1.5">
+                        Join the geography challenge.
+                    </p>
+                </div>
+
+                <form @submit.prevent="handleRegister" class="space-y-5">
+                    <!-- Username -->
+                    <div class="space-y-1.5">
+                        <label
+                            for="username"
+                            class="block text-xs font-medium text-white/40 uppercase tracking-wider"
+                            >Username</label
+                        >
+                        <input
+                            v-model="username"
+                            id="username"
+                            type="text"
+                            required
+                            minlength="3"
+                            placeholder="Choose a username"
+                            class="w-full px-4 py-3 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white placeholder:text-white/20 focus:outline-none focus:border-[#D36040]/60 focus:ring-1 focus:ring-[#D36040]/20 transition-all text-sm"
+                        />
                     </div>
+
+                    <!-- Email -->
+                    <div class="space-y-1.5">
+                        <label
+                            for="email"
+                            class="block text-xs font-medium text-white/40 uppercase tracking-wider"
+                            >Email</label
+                        >
+                        <input
+                            v-model="email"
+                            id="email"
+                            type="email"
+                            required
+                            placeholder="you@example.com"
+                            class="w-full px-4 py-3 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white placeholder:text-white/20 focus:outline-none focus:border-[#D36040]/60 focus:ring-1 focus:ring-[#D36040]/20 transition-all text-sm"
+                        />
+                    </div>
+
+                    <!-- Password -->
+                    <div class="space-y-1.5">
+                        <label
+                            for="password"
+                            class="block text-xs font-medium text-white/40 uppercase tracking-wider"
+                            >Password</label
+                        >
+                        <input
+                            v-model="password"
+                            id="password"
+                            type="password"
+                            required
+                            minlength="6"
+                            placeholder="At least 6 characters"
+                            class="w-full px-4 py-3 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white placeholder:text-white/20 focus:outline-none focus:border-[#D36040]/60 focus:ring-1 focus:ring-[#D36040]/20 transition-all text-sm"
+                        />
+                    </div>
+
+                    <!-- Error -->
+                    <div
+                        v-if="authError"
+                        class="flex items-start gap-3 p-4 bg-red-500/[0.08] border border-red-500/20 rounded-lg"
+                    >
+                        <svg
+                            class="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                        <p class="text-sm text-red-400">{{ authError }}</p>
+                    </div>
+
+                    <!-- Submit -->
+                    <button
+                        type="submit"
+                        :disabled="isLoading"
+                        class="w-full flex items-center justify-center gap-2 py-3 bg-[#D36040] hover:bg-[#b04a2e] disabled:bg-white/[0.06] disabled:text-white/25 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all text-sm mt-2"
+                    >
+                        <svg
+                            v-if="isLoading"
+                            class="animate-spin w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                        </svg>
+                        {{
+                            isLoading ? "Creating account..." : "Create account"
+                        }}
+                    </button>
                 </form>
             </div>
+
+            <!-- Sign in link -->
+            <p class="text-center text-sm text-white/25 mt-6">
+                Already have an account?
+                <router-link
+                    to="/login"
+                    class="text-white/50 hover:text-white transition-colors ml-1 font-medium"
+                >
+                    Sign in
+                </router-link>
+            </p>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useAuthStore } from '../stores/AuthStore';
-import { useRouter } from 'vue-router';
+import { ref, computed } from "vue";
+import { useAuthStore } from "../stores/AuthStore";
+import { useRouter } from "vue-router";
 
 const authStore = useAuthStore();
 const router = useRouter();
 
-const username = ref('');
-const email = ref('');
-const password = ref('');
+const username = ref("");
+const email = ref("");
+const password = ref("");
+const registrationSuccess = ref(false);
+const recoveryCode = ref("");
 
 const isLoading = computed(() => authStore.isLoading);
 const authError = computed(() => authStore.authError);
+
+const copyRecoveryCode = async () => {
+    try {
+        await navigator.clipboard.writeText(recoveryCode.value);
+        alert("Recovery code copied to clipboard!");
+    } catch (err) {
+        console.error("Failed to copy text: ", err);
+    }
+};
 
 const handleRegister = async () => {
     if (!username.value || !email.value || !password.value) {
         authStore.setError("Please fill in all fields.");
         return;
     }
+
     if (password.value.length < 6) {
-        authStore.setError("Password must be at least 6 characters long.");
+        authStore.setError("Password must be at least 6 characters.");
         return;
     }
 
-    const success = await authStore.register({
+    authStore.clearError();
+
+    const result = await authStore.register({
         username: username.value,
         email: email.value,
         password: password.value,
     });
 
-    if (success) {
-        // Use a notification instead of alert
-        const notification = document.createElement('div');
-        notification.className =
-            'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
-        notification.innerHTML = `
-        <div class="flex">
-            <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            </div>
-            <div class="ml-3">
-            <p class="text-sm">Registration successful! Please log in.</p>
-            </div>
-        </div>
-        `;
-        document.body.appendChild(notification);
-
-        // Remove notification after 3 seconds and redirect
-        setTimeout(() => {
-            notification.remove();
-            router.push('/login');
-        }, 3000);
+    if (result.success) {
+        registrationSuccess.value = true;
+        recoveryCode.value = result.data?.recoveryCode || "";
     }
 };
 </script>

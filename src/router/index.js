@@ -1,57 +1,89 @@
 // src/router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import GameView from '../views/GameView.vue'
-import LoginView from '../views/LoginView.vue';     // <<< Import LoginView
-import RegisterView from '../views/RegisterView.vue';
-import ProfileView from '../views/ProfileView.vue'
-import { useAuthStore } from '../stores/AuthStore';
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
+import GameView from "../views/GameView.vue";
+import LoginView from "../views/LoginView.vue"; // <<< Import LoginView
+import RegisterView from "../views/RegisterView.vue";
+import ForgotPasswordView from "../views/ForgotPasswordView.vue";
+import ProfileView from "../views/ProfileView.vue";
+import LeaderboardView from "../views/LeaderboardView.vue";
+import { useAuthStore } from "../stores/AuthStore";
 
 // Import multiplayer views
-import MultiplayerLobby from '../views/MultiplayerLobby.vue';
-import CreateMultiplayerGame from '../views/CreateMultiplayerGame.vue';
-import MultiplayerGame from '../views/MultiplayerGame.vue'
-import JoinGame from '../views/JoinGame.vue';
+import MultiplayerLobby from "../views/MultiplayerLobby.vue";
+import CreateMultiplayerGame from "../views/CreateMultiplayerGame.vue";
+import MultiplayerGame from "../views/MultiplayerGame.vue";
+import JoinGame from "../views/JoinGame.vue";
 
 const routes = [
-  { path: '/', name: 'Home', component: HomeView },
-  { path: '/game', name: 'Game', component: GameView, meta: { requiresAuth: true } }, // <<< Mark as requiresAuth
-  { path: '/login', name: 'Login', component: LoginView, meta: { guestOnly: true } },     // <<< Add Login route
-  { path: '/register', name: 'Register', component: RegisterView, meta: { guestOnly: true } }, // <<< Add Register route
-  { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
-  // Add routes for Leaderboard later (likely require auth)
-  // { path: '/leaderboard', name: 'Leaderboard', component: LeaderboardView },
-  
+  { path: "/", name: "Home", component: HomeView },
+  {
+    path: "/game",
+    name: "Game",
+    component: GameView,
+    meta: { requiresAuth: true },
+  }, // <<< Mark as requiresAuth
+  {
+    path: "/login",
+    name: "Login",
+    component: LoginView,
+    meta: { guestOnly: true },
+  }, // <<< Add Login route
+  {
+    path: "/register",
+    name: "Register",
+    component: RegisterView,
+    meta: { guestOnly: true },
+  }, // <<< Add Register route
+  {
+    path: "/forgot-password",
+    name: "ForgotPassword",
+    component: ForgotPasswordView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/profile",
+    name: "Profile",
+    component: ProfileView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/leaderboard",
+    name: "Leaderboard",
+    component: LeaderboardView,
+    meta: { requiresAuth: true },
+  },
+
   // --- Multiplayer Routes ---
   {
-    path: '/multiplayer/create',
-    name: 'CreateMultiplayerGame',
+    path: "/multiplayer/create",
+    name: "CreateMultiplayerGame",
     component: CreateMultiplayerGame,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
-    path: '/multiplayer/join',
-    name: 'JoinGame',
+    path: "/multiplayer/join",
+    name: "JoinGame",
     component: JoinGame,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
-    path: '/multiplayer/lobby',
-    name: 'MultiplayerLobby',
+    path: "/multiplayer/lobby",
+    name: "MultiplayerLobby",
     component: MultiplayerLobby,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
-  { 
-    path: '/multiplayer/game',
-    name: 'MultiplayerGame',
+  {
+    path: "/multiplayer/game",
+    name: "MultiplayerGame",
     component: MultiplayerGame,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
 ];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
 });
 
 // --- Navigation Guards ---
@@ -63,20 +95,20 @@ router.beforeEach((to, from, next) => {
   // It's generally better to initialize auth state (check localStorage) in App.vue or main.js
   // and then trust the store's `isAuthenticated` getter here.
   const authStore = useAuthStore(); // Get store instance inside guard
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  const guestOnly = to.matched.some(record => record.meta.guestOnly);
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const guestOnly = to.matched.some((record) => record.meta.guestOnly);
   const isAuthenticated = authStore.isAuthenticated; // Read current state
 
   // console.log(`Routing to: ${to.path}, RequiresAuth: ${requiresAuth}, GuestOnly: ${guestOnly}, IsAuthenticated: ${isAuthenticated}`); // Debug log
 
   if (requiresAuth && !isAuthenticated) {
     // Redirect to login if trying to access protected route without auth
-    console.log('Redirecting to /login (auth required)');
-    next({ name: 'Login' });
+    console.log("Redirecting to /login (auth required)");
+    next({ name: "Login" });
   } else if (guestOnly && isAuthenticated) {
     // Redirect away from login/register if already logged in
-    console.log('Redirecting to / (already authenticated)');
-    next({ name: 'Home' }); // Or '/game'
+    console.log("Redirecting to / (already authenticated)");
+    next({ name: "Home" }); // Or '/game'
   } else {
     // Allow navigation
     next();
